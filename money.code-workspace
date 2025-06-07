@@ -1,0 +1,47 @@
+{
+    "folders": [
+      {
+        "path": "app",
+        "name": "backend"
+      },
+      {
+        "path": "webui",
+        "name": "frontend"
+      },
+      {
+        "path": ".",
+        "name": "root"
+      }
+    ],
+    "settings": {
+    },
+    "launch": {
+      "version": "0.2.0",
+      "configurations": [
+        {
+          "type": "debugpy",
+          "request": "launch",
+          "name": "Server",
+          "program": "${workspaceFolder}/app/main.py",
+          "console": "integratedTerminal",
+          "env": {},
+          "args": []
+        },
+        {
+          "type": "node",
+          "request": "launch",
+          "cwd": "${workspaceFolder:frontend}",
+          "name": "WebUI",
+          "runtimeExecutable": "npm",
+          "runtimeArgs": ["run", "dev"]
+        }
+      ],
+      "compounds": [
+        {
+          "name": "Both (Server & WebUI)",
+          "configurations": ["Server", "WebUI"],
+          "stopAll": true
+        }
+      ]
+    }
+}
