@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 
 from ..dependencies import get_token_header
+from fastapi import APIRouter, Depends
+from ..dependencies import has_permission
 
 router = APIRouter(
     prefix="/items",
@@ -18,7 +20,9 @@ async def read_items():
     return fake_items_db
 
 
-@router.get("/{item_id}")
+router = APIRouter()
+
+@router.get("/{item_id}", dependencies=[Depends(has_permission("read_item"))])
 async def read_item(item_id: str):
     if item_id not in fake_items_db:
         raise HTTPException(status_code=404, detail="Item not found")
