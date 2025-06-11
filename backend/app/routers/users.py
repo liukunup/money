@@ -11,7 +11,7 @@ from ..models.user import User, Role
 from ..utils.auth import get_password_hash, authenticate_user, create_access_token
 from ..utils.email import send_email
 import secrets
-from ..response import Response
+from ..config.response import Response
 
 router = APIRouter()
 

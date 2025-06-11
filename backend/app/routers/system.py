@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-from ..response import Response
+from ..config.response import Response
 from fastapi import APIRouter
 
 router = APIRouter()
