@@ -9,8 +9,6 @@ from pydantic import (
     BeforeValidator,
     EmailStr,
     HttpUrl,
-    MySQLDsn,
-    PostgresDsn,
     computed_field,
     model_validator,
 )

@@ -1,103 +1,221 @@
-# -*- coding: UTF-8 -*-
+import uuid
+from typing import Any
 
-from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
-from datetime import timedelta
-from sqlalchemy.orm import Session
-from ..constant import JWTConfig, Role as RoleEnum
-from ..database import SessionDep
-from ..models.user import User, Role
-from ..utils.auth import get_password_hash, authenticate_user, create_access_token
-from ..utils.email import send_email
-import secrets
-from ..config.response import Response
+from fastapi import APIRouter, Depends, HTTPException
+from sqlmodel import col, delete, func, select
 
-router = APIRouter()
+from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
+from app.config import settings
+from app.models.user import (
+    UpdatePassword,
+    User,
+    UserCreate,
+    UserPublic,
+    UserRegister,
+    UsersPublic,
+    UserUpdate,
+    UserUpdateMe,
+)
+from app.internal import user as user_serivce
+from app.utils.security import get_password_hash, verify_password
+from app.utils.email import generate_new_account_email, send_email
 
-def get_admin_role(session: Session):
-    admin_role = session.query(Role).filter(Role.name == RoleEnum.ADMIN).first()
-    if not admin_role:
-        admin_role = Role(name=RoleEnum.ADMIN)
-        session.add(admin_role)
-        session.commit()
-        session.refresh(admin_role)
-    return admin_role
 
-@router.post("/register", tags=["User"], summary="用户注册", description="使用邮箱和密码进行用户注册")
-async def register(email: str, password: str, session: SessionDep) -> Response:
+router = APIRouter(prefix="/users", tags=["users"])
+
+
+@router.get(
+    "/",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=UsersPublic,
+)
+def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
     """
-    用户注册接口
-
-    - **email**:    邮箱
-    - **password**: 密码
+    Retrieve users.
     """
-    # 检查邮箱是否已存在
-    if session.query(User).filter(User.email == email).first():
+
+    count_statement = select(func.count()).select_from(User)
+    count = session.exec(count_statement).one()
+
+    statement = select(User).offset(skip).limit(limit)
+    users = session.exec(statement).all()
+
+    return UsersPublic(data=users, count=count)
+
+
+@router.post(
+    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
+)
+def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+    """
+    Create new user.
+    """
+    user = crud.get_user_by_email(session=session, email=user_in.email)
+    if user:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered",
+            status_code=400,
+            detail="The user with this email already exists in the system.",
         )
-    # 创建新用户
-    hashed_password = get_password_hash(password)
-    new_user = User(email=email, hashed_password=hashed_password, disabled=False)
-    # 检查是否为第一个用户
-    first_user = session.query(User).first() is None
-    if first_user:  # 将第一个用户设置为管理员
-        admin_role = get_admin_role(session)
-        new_user.roles.append(admin_role)
-    # 保存用户
-    session.add(new_user)
+
+    user = crud.create_user(session=session, user_create=user_in)
+    if settings.emails_enabled and user_in.email:
+        email_data = generate_new_account_email(
+            email_to=user_in.email, username=user_in.email, password=user_in.password
+        )
+        send_email(
+            email_to=user_in.email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+    return user
+
+
+@router.patch("/me", response_model=UserPublic)
+def update_user_me(
+    *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
+) -> Any:
+    """
+    Update own user.
+    """
+
+    if user_in.email:
+        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        if existing_user and existing_user.id != current_user.id:
+            raise HTTPException(
+                status_code=409, detail="User with this email already exists"
+            )
+    user_data = user_in.model_dump(exclude_unset=True)
+    current_user.sqlmodel_update(user_data)
+    session.add(current_user)
     session.commit()
-    session.refresh(new_user)
-    # 移除敏感字段再进行返回
-    new_user.hashed_password = None
-    return Response(code=200, message="success", data=new_user)
-
-@router.post("/login", tags=["User"], summary="用户登录", description="使用用户名/邮箱和密码进行用户登录")
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: SessionDep = Depends()) -> Response:
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    access_token_expires = timedelta(minutes=JWTConfig.ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(data={"sub": user.username}, expires_delta=access_token_expires, session=session)
-    return Response(code=200, message="success", data={"accessToken": access_token, "tokenType": "bearer"})
-
-@router.post("/logout", tags=["User"], summary="用户登出", description="JWT是无状态的，通常前端处理令牌删除")
-async def logout() -> Response:
-    return Response(code=200, message="success", data=None)
-
-@router.post("/forgot-password", tags=["User"], summary="忘记密码", description="发送重置密码链接到用户邮箱")
-async def forgot_password(email: str, session: SessionDep) -> Response:
-    user = session.query(User).filter(User.email == email).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    # 生成重置密码令牌
-    reset_token = secrets.token_urlsafe(32)
-    # 这里可以将令牌存储到数据库，以便后续验证
-    reset_link = f"https://yourdomain.com/reset-password?token={reset_token}"
-    # 构建邮件内容
-    subject = "重置密码请求"
-    message = f"您收到此邮件是因为您请求重置密码。请点击以下链接重置您的密码：\n{reset_link}\n如果您没有请求重置密码，请忽略此邮件。"
-    # 发送邮件
-    if send_email(email, subject, message):
-        return {"message": "Password reset instructions sent to your email"}
-    else:
-        raise HTTPException(status_code=500, detail="Failed to send email")
-
-@router.get("/users/", tags=["User"], summary="获取用户列表", description="获取所有用户的列表")
-async def list_users(page_num: int = 1, page_size: int = 10, db: Session = Depends(get_db)) -> Response:
-    users = db.query(User).offset((page_num - 1) * page_size).limit(page_size).all()
-    return Response(code=200, message="success", data=users)
-
-# 通过jwt获取当前用户信息
-@router.get("/users/me", tags=["User"], summary="获取当前用户信息", description="获取当前登录用户的信息")
-async def read_users_me(current_user: Annotated[User, Depends(get_current_active_user)],):
+    session.refresh(current_user)
     return current_user
+
+
+@router.patch("/me/password", response_model=Message)
+def update_password_me(
+    *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
+) -> Any:
+    """
+    Update own password.
+    """
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Incorrect password")
+    if body.current_password == body.new_password:
+        raise HTTPException(
+            status_code=400, detail="New password cannot be the same as the current one"
+        )
+    hashed_password = get_password_hash(body.new_password)
+    current_user.hashed_password = hashed_password
+    session.add(current_user)
+    session.commit()
+    return Message(message="Password updated successfully")
+
+
+@router.get("/me", response_model=UserPublic)
+def read_user_me(current_user: CurrentUser) -> Any:
+    """
+    Get current user.
+    """
+    return current_user
+
+
+@router.delete("/me", response_model=Message)
+def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+    """
+    Delete own user.
+    """
+    if current_user.is_superuser:
+        raise HTTPException(
+            status_code=403, detail="Super users are not allowed to delete themselves"
+        )
+    session.delete(current_user)
+    session.commit()
+    return Message(message="User deleted successfully")
+
+
+@router.post("/signup", response_model=UserPublic)
+def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+    """
+    Create new user without the need to be logged in.
+    """
+    user = crud.get_user_by_email(session=session, email=user_in.email)
+    if user:
+        raise HTTPException(
+            status_code=400,
+            detail="The user with this email already exists in the system",
+        )
+    user_create = UserCreate.model_validate(user_in)
+    user = crud.create_user(session=session, user_create=user_create)
+    return user
+
+
+@router.get("/{user_id}", response_model=UserPublic)
+def read_user_by_id(
+    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
+) -> Any:
+    """
+    Get a specific user by id.
+    """
+    user = session.get(User, user_id)
+    if user == current_user:
+        return user
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="The user doesn't have enough privileges",
+        )
+    return user
+
+
+@router.patch(
+    "/{user_id}",
+    dependencies=[Depends(get_current_active_superuser)],
+    response_model=UserPublic,
+)
+def update_user(
+    *,
+    session: SessionDep,
+    user_id: uuid.UUID,
+    user_in: UserUpdate,
+) -> Any:
+    """
+    Update a user.
+    """
+
+    db_user = session.get(User, user_id)
+    if not db_user:
+        raise HTTPException(
+            status_code=404,
+            detail="The user with this id does not exist in the system",
+        )
+    if user_in.email:
+        existing_user = crud.get_user_by_email(session=session, email=user_in.email)
+        if existing_user and existing_user.id != user_id:
+            raise HTTPException(
+                status_code=409, detail="User with this email already exists"
+            )
+
+    db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
+    return db_user
+
+
+@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+def delete_user(
+    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
+) -> Message:
+    """
+    Delete a user.
+    """
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    if user == current_user:
+        raise HTTPException(
+            status_code=403, detail="Super users are not allowed to delete themselves"
+        )
+    statement = delete(Item).where(col(Item.owner_id) == user_id)
+    session.exec(statement)  # type: ignore
+    session.delete(user)
+    session.commit()
+    return Message(message="User deleted successfully")

@@ -9,9 +9,9 @@ from pydantic import ValidationError
 
 from .database import SessionDep
 from .token import TokenDep
-from ..config import settings
-from ..models.user import User
-from ..models.token import TokenPayload
+from app.config import settings
+from app.models.user import User
+from app.models.token import TokenPayload
 
 
 def get_current_user(session: SessionDep, token: TokenDep) -> User:

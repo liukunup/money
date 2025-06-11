@@ -3,11 +3,11 @@
 from typing import Annotated
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
-from ..config import settings
+from app.config import settings
 
 # OAuth2
 reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/token"
+    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
 )
 
 TokenDep = Annotated[str, Depends(reusable_oauth2)]
