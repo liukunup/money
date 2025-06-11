@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 import secrets
 import warnings
 from typing import Annotated, Any, Literal
@@ -7,6 +9,7 @@ from pydantic import (
     BeforeValidator,
     EmailStr,
     HttpUrl,
+    MySQLDsn,
     PostgresDsn,
     computed_field,
     model_validator,
@@ -25,17 +28,23 @@ def parse_cors(v: Any) -> list[str] | str:
 
 
 class Settings(BaseSettings):
+
     model_config = SettingsConfigDict(
         # Use top level .env file (one level above ./backend/)
         env_file="../.env",
         env_ignore_empty=True,
         extra="ignore",
     )
+
     API_V1_STR: str = "/api/v1"
+
     SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+
+    # 60 minutes * 24 hours * 60 days = 60 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 60
+
     FRONTEND_HOST: str = "http://localhost:5173"
+
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
     BACKEND_CORS_ORIGINS: Annotated[
@@ -50,24 +59,41 @@ class Settings(BaseSettings):
         ]
 
     PROJECT_NAME: str
+
     SENTRY_DSN: HttpUrl | None = None
-    POSTGRES_SERVER: str
-    POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str = ""
-    POSTGRES_DB: str = ""
+
+    DB_TYPE: str = "sqlite"
+    DB_HOST: str
+    DB_PORT: int = 3306
+    DB_USERNAME: str = "root"
+    DB_PASSWORD: str = ""
+    DB_NAME: str = ""
 
     @computed_field  # type: ignore[prop-decorator]
     @property
-    def SQLALCHEMY_DATABASE_URI(self) -> PostgresDsn:
-        return MultiHostUrl.build(
-            scheme="postgresql+psycopg",
-            username=self.POSTGRES_USER,
-            password=self.POSTGRES_PASSWORD,
-            host=self.POSTGRES_SERVER,
-            port=self.POSTGRES_PORT,
-            path=self.POSTGRES_DB,
-        )
+    def SQLALCHEMY_DATABASE_URI(self) -> AnyUrl:
+        if self.DB_TYPE == 'sqlite':
+            pass
+        elif self.DB_TYPE == 'mysql':
+            return MultiHostUrl.build(
+                scheme="mysql+mysqlconnector",
+                username=self.DB_USERNAME,
+                password=self.DB_PASSWORD,
+                host=self.DB_HOST,
+                port=self.DB_PORT,
+                path=self.DB_NAME,
+            )
+        elif self.DB_TYPE == 'sqlite':
+            return MultiHostUrl.build(
+                scheme="postgresql+psycopg",
+                username=self.DB_USERNAME,
+                password=self.DB_PASSWORD,
+                host=self.DB_HOST,
+                port=self.DB_PORT,
+                path=self.DB_NAME,
+            )
+        else:
+            raise ValueError("Unsupported database type")
 
     SMTP_TLS: bool = True
     SMTP_SSL: bool = False
@@ -109,7 +135,7 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
-        self._check_default_secret("POSTGRES_PASSWORD", self.POSTGRES_PASSWORD)
+        self._check_default_secret("DB_PASSWORD", self.DB_PASSWORD)
         self._check_default_secret(
             "FIRST_SUPERUSER_PASSWORD", self.FIRST_SUPERUSER_PASSWORD
         )
