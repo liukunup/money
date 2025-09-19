@@ -1,0 +1,25 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "FastAPI (uv) - Debug",
+      "type": "python",
+      "request": "launch",
+      "module": "fastapi.cli",
+      "args": [
+        "dev",
+        "app.main:app"
+      ],
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "ENV": "development"
+      },
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "justMyCode": false,
+      "subProcess": true,
+      "envFile": "${workspaceFolder}/.env"
+    }
+  ]
+}
