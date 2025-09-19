@@ -1,0 +1,42 @@
+{
+  "name": "Vue 3 + Vite + TypeScript DevEnv",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Vue.volar",                  // Vue 3 官方支持
+        "Vue.vscode-typescript-vue-plugin", // Vue + TS 支持
+        "dbaeumer.vscode-eslint",     // ESLint
+        "esbenp.prettier-vscode",     // Prettier
+        "bradlc.vscode-tailwindcss",  // Tailwind CSS（如使用）
+        "oderwat.indent-rainbow",     // 缩进彩虹
+        "ms-vscode.vscode-typescript-next", // 最新版 TS 支持
+        "ms-azuretools.vscode-docker" // Docker 支持
+      ],
+      "settings": {
+        "typescript.tsdk": "node_modules/typescript/lib",
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "eslint.validate": [
+          "javascript",
+          "javascriptreact",
+          "typescript",
+          "typescriptreact",
+          "vue"
+        ],
+        "files.autoSave": "onFocusChange",
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      }
+    }
+  },
+  "forwardPorts": [5173, 4173], // Vite dev + preview
+  "postCreateCommand": "npm install && echo '✅ Vue 3 环境已就绪！运行 npm run dev 启动开发服务器'",
+  "remoteUser": "node",
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  }
+}
