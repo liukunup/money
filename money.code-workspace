@@ -19,13 +19,23 @@
       "version": "0.2.0",
       "configurations": [
         {
-          "type": "debugpy",
-          "request": "launch",
           "name": "Server",
-          "program": "${workspaceFolder}/app/main.py",
+          "request": "launch",
+          "type": "debugpy",
+          "module": "uvicorn",
+          "args": [
+            "app.main:srv",
+            "--host", "127.0.0.1",
+            "--port", "8000",
+            "--reload",
+            "--reload-dir", "."
+          ],
+          "env": {
+            "PYTHONPATH": "${workspaceFolder:backend}",
+          },
+          "justMyCode": true,
           "console": "integratedTerminal",
-          "env": {},
-          "args": []
+          "cwd": "${workspaceFolder:backend}",
         },
         {
           "type": "node",
