@@ -2,7 +2,7 @@
 
 import secrets
 import warnings
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import (
     AnyUrl,
@@ -29,7 +29,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         # Use top level .env file (one level above ./backend/)
-        env_file="../.env",
+        env_file=".env",
         env_ignore_empty=True,
         extra="ignore",
     )
@@ -38,8 +38,8 @@ class Settings(BaseSettings):
 
     SECRET_KEY: str = secrets.token_urlsafe(32)
     ALGORITHM: str = "HS256"
-    # 60 minutes * 24 hours * 60 days = 60 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 60
+    # 60 minutes * 24 hours * 30 days = 30 days
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 30
 
     FRONTEND_HOST: str = "http://localhost:5173"
 
@@ -56,22 +56,23 @@ class Settings(BaseSettings):
             self.FRONTEND_HOST
         ]
 
-    PROJECT_NAME: str
+    PROJECT_NAME: str = "Money"
 
     SENTRY_DSN: HttpUrl | None = None
 
     DB_TYPE: str = "sqlite"
-    DB_HOST: str
-    DB_PORT: int = 3306
-    DB_USERNAME: str = "root"
-    DB_PASSWORD: str = ""
-    DB_NAME: str = ""
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[int] = None
+    DB_USERNAME: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+    DB_NAME: str = "money.db"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> AnyUrl:
         if self.DB_TYPE == 'sqlite':
-            pass
+            path = self.DB_NAME.lstrip('/')
+            return AnyUrl(f"sqlite:///{path}")
         elif self.DB_TYPE == 'mysql':
             return MultiHostUrl.build(
                 scheme="mysql+mysqlconnector",
@@ -81,7 +82,7 @@ class Settings(BaseSettings):
                 port=self.DB_PORT,
                 path=self.DB_NAME,
             )
-        elif self.DB_TYPE == 'sqlite':
+        elif self.DB_TYPE == 'postgresql':
             return MultiHostUrl.build(
                 scheme="postgresql+psycopg",
                 username=self.DB_USERNAME,
