@@ -20,7 +20,7 @@ async def health_check() -> Response:
     dependencies=[Depends(get_current_active_superuser)],
     status_code=201,
 )
-def test_email(email_to: EmailStr) -> Message:
+def test_email(email_to: EmailStr) -> Response:
     """
     Test emails.
     """

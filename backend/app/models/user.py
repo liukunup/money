@@ -43,6 +43,12 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
 
 
+class UserRoleLink(SQLModel, table=True):
+    id: int = Field(primary_key=True)
+    user_id: Optional[str] = Field(default=None, foreign_key="users.id", primary_key=True)
+    role_id: Optional[str] = Field(default=None, foreign_key="roles.id", primary_key=True)
+
+
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
@@ -63,12 +69,6 @@ class UsersPublic(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
-
-
-class UserRoleLink(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    user_id: Optional[str] = Field(default=None, foreign_key="users.id", primary_key=True)
-    role_id: Optional[str] = Field(default=None, foreign_key="roles.id", primary_key=True)
 
 
 class RoleEnum(str, Enum):

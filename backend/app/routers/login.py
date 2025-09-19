@@ -8,10 +8,10 @@ from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.config import settings
-from app.dependencies import SessionDep, CurrentUser
+from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
 from app.models.response import Response
 from app.models.token import Token
-from app.models.user import UserPublic
+from app.models.user import UserPublic, NewPassword
 from app.internal import user as user_service
 from app.utils import security
 

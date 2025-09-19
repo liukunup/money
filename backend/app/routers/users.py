@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, delete, func, select
 
 from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
+from app.models.response import Response
 from app.config import settings
 from app.models.user import (
     UpdatePassword,
@@ -92,7 +93,7 @@ def update_user_me(
     return current_user
 
 
-@router.patch("/me/password", response_model=Message)
+@router.patch("/me/password", response_model=Response)
 def update_password_me(
     *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
 ) -> Any:
@@ -109,7 +110,7 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
-    return Message(message="Password updated successfully")
+    return Response(message="Password updated successfully")
 
 
 @router.get("/me", response_model=UserPublic)
@@ -120,7 +121,7 @@ def read_user_me(current_user: CurrentUser) -> Any:
     return current_user
 
 
-@router.delete("/me", response_model=Message)
+@router.delete("/me", response_model=Response)
 def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
     """
     Delete own user.
@@ -131,7 +132,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         )
     session.delete(current_user)
     session.commit()
-    return Message(message="User deleted successfully")
+    return Response(message="User deleted successfully")
 
 
 @router.post("/signup", response_model=UserPublic)
@@ -203,7 +204,7 @@ def update_user(
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
-) -> Message:
+) -> Response:
     """
     Delete a user.
     """
@@ -218,4 +219,4 @@ def delete_user(
     session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
-    return Message(message="User deleted successfully")
+    return Response(message="User deleted successfully")
