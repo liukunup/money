@@ -3,12 +3,12 @@
   "configurations": [
     {
       "name": "FastAPI (uv) - Debug",
-      "type": "python",
+      "type": "debugpy",
       "request": "launch",
       "module": "fastapi.cli",
       "args": [
         "dev",
-        "app.main:app"
+        "app.main:srv"
       ],
       "python": "${workspaceFolder}/.venv/bin/python",
       "env": {

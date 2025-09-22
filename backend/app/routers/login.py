@@ -9,7 +9,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 
 from app.config import settings
 from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
-from app.models.response import Response
+from app.models.response import ApiResponse
 from app.models.token import Token
 from app.models.user import UserPublic, NewPassword
 from app.internal import user as user_service
@@ -50,7 +50,7 @@ def test_token(current_user: CurrentUser) -> Any:
 
 
 @router.post("/password-recovery/{email}", summary="密码重置", description="通过邮箱重置密码")
-def recover_password(email: str, session: SessionDep) -> Response:
+def recover_password(email: str, session: SessionDep) -> ApiResponse:
     """
     Password Recovery
     """
@@ -70,11 +70,11 @@ def recover_password(email: str, session: SessionDep) -> Response:
         subject=email_data.subject,
         html_content=email_data.html_content,
     )
-    return Response(message="Password recovery email sent")
+    return ApiResponse(message="Password recovery email sent")
 
 
 @router.post("/reset-password/", summary="重置密码", description="通过重置密码令牌重置密码")
-def reset_password(session: SessionDep, body: NewPassword) -> Response:
+def reset_password(session: SessionDep, body: NewPassword) -> ApiResponse:
     """
     Reset password
     """
@@ -93,7 +93,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> Response:
     user.hashed_password = hashed_password
     session.add(user)
     session.commit()
-    return Response(message="Password updated successfully")
+    return ApiResponse(message="Password updated successfully")
 
 
 @router.post(
