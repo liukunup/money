@@ -1,10 +1,14 @@
-from typing import Generic, TypeVar, Optional
-from pydantic import BaseModel
+from typing import TypeVar, Optional
+from fastapi.responses import ORJSONResponse
 
 T = TypeVar('T')
 
-# Generic response
-class Response(BaseModel, Generic[T]):
-    code: int = 200
-    message: str = "success"
-    data: Optional[T] = None
+class ApiResponse(ORJSONResponse):
+
+    def __init__(self, *, code: int = 200, message: str = "success", data: Optional[T] = None, **kwargs):
+        content = {
+            "code": code,
+            "message": message,
+            "data": data,
+        }
+        super().__init__(content=content, **kwargs)
