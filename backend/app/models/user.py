@@ -7,6 +7,13 @@ from typing import List, Optional
 from pydantic import EmailStr
 from sqlmodel import SQLModel, Field, Relationship
 
+# Relation table for many-to-many relationship between User and Role
+class UserRoleLink(SQLModel, table=True):
+    __tablename__ = "userrolelink"
+
+    user_id: uuid.UUID = Field(default=None, foreign_key="user.id", primary_key=True)
+    role_id: int       = Field(default=None, foreign_key="role.id", primary_key=True)
+
 
 # Shared properties
 class UserBase(SQLModel):
@@ -43,16 +50,13 @@ class UpdatePassword(SQLModel):
     new_password: str = Field(min_length=8, max_length=40)
 
 
-class UserRoleLink(SQLModel, table=True):
-    id: int = Field(primary_key=True)
-    user_id: Optional[str] = Field(default=None, foreign_key="users.id", primary_key=True)
-    role_id: Optional[str] = Field(default=None, foreign_key="roles.id", primary_key=True)
-
-
 # Database model, database table inferred from class name
 class User(UserBase, table=True):
+    __tablename__ = "user"
+
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
+
     roles: List["Role"] = Relationship(back_populates="users", link_model=UserRoleLink)
 
 
@@ -79,17 +83,19 @@ class RoleEnum(str, Enum):
 
 
 class Role(SQLModel, table=True):
-    __tablename__ = 'roles'
+    __tablename__ = "role"
 
     id: int = Field(primary_key=True)
     name: str = Field(unique=True)
+
     users: List[User] = Relationship(back_populates="roles", link_model=UserRoleLink)
     permissions: List["Permission"] = Relationship(back_populates="role")
 
 
 class Permission(SQLModel, table=True):
-    __tablename__ = 'permissions'
+    __tablename__ = "permission"
 
     id: int = Field(primary_key=True)
     name: str = Field(unique=True)
+
     role: Optional[Role] = Relationship(back_populates="permissions")

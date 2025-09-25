@@ -1,8 +1,10 @@
+# -*- coding: UTF-8 -*-
+
 import logging
 
 from sqlmodel import Session
 
-from app.core.db import engine, init_db
+from app.dependencies import engine, init_db
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -1,10 +1,10 @@
 # -*- coding: UTF-8 -*-
 
+import datetime
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 from pydantic.networks import EmailStr
-
-from datetime import datetime
 
 from app.dependencies import get_current_active_superuser
 from app.utils.email import generate_test_email, send_email
@@ -18,7 +18,7 @@ async def readiness():
     content={
         "code": 200,
         "message": "ok",
-        "timestamp": datetime.now(datetime.timezone.utc),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc),
     }
     # TODO: 可以添加更多的就绪检查逻辑，比如数据库连接检查等
     return ORJSONResponse(content=content)
@@ -29,7 +29,7 @@ async def healthcheck():
     content={
         "code": 200,
         "status": "ok",
-        "timestamp": datetime.now(datetime.timezone.utc),
+        "timestamp": datetime.datetime.now(datetime.timezone.utc),
     }
     return ORJSONResponse(content=content)
 
