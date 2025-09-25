@@ -42,8 +42,8 @@ def get_user(*, session: Session, username: str, email: EmailStr) -> User | None
     return user
 
 
-# 验证用户
-def authenticate(*, session: Session, username: str, password: str) -> User | None:
+# 登录认证
+def auth(*, session: Session, username: str, password: str) -> User | None:
     # 用户名和邮箱都可以作为登录凭证
     user = get_user(session=session, username=username, email=username)
     if not user:

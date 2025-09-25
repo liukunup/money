@@ -5,7 +5,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import col, delete, func, select
 
 from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
-from app.models.response import ApiResponse
 from app.config import settings
 from app.models.user import (
     UpdatePassword,
@@ -110,7 +109,7 @@ def update_password_me(
     current_user.hashed_password = hashed_password
     session.add(current_user)
     session.commit()
-    return ApiResponse(message="Password updated successfully")
+    return ORJSONResponse(content={"message": "Password updated successfully"})
 
 
 @router.get("/me", response_model=UserPublic)
@@ -132,7 +131,7 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         )
     session.delete(current_user)
     session.commit()
-    return ApiResponse(message="User deleted successfully")
+    return ORJSONResponse(content={"message": "User deleted successfully"})
 
 
 @router.post("/signup", response_model=UserPublic)
@@ -204,7 +203,7 @@ def update_user(
 @router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
-) -> ApiResponse:
+) -> Any:
     """
     Delete a user.
     """
@@ -219,4 +218,4 @@ def delete_user(
     session.exec(statement)  # type: ignore
     session.delete(user)
     session.commit()
-    return ApiResponse(message="User deleted successfully")
+    return ORJSONResponse(content={"message": "User deleted successfully"})

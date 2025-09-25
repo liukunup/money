@@ -1,11 +1,11 @@
-from typing import Any
+# -*- coding: UTF-8 -*-
 
 from fastapi import APIRouter
 from pydantic import BaseModel
 
 from app.dependencies import SessionDep
-from app.utils.security import get_password_hash
 from app.models.user import User, UserPublic
+from app.utils.security import get_password_hash
 
 
 router = APIRouter(tags=["private"], prefix="/private")
@@ -18,19 +18,16 @@ class PrivateUserCreate(BaseModel):
     is_verified: bool = False
 
 
-@router.post("/users/", response_model=UserPublic)
-def create_user(user_in: PrivateUserCreate, session: SessionDep) -> Any:
+@router.post("/users", response_model=UserPublic)
+def create_user(user_req: PrivateUserCreate, session: SessionDep):
     """
-    Create a new user.
+    Create a new user (for testing purposes only)
     """
-
     user = User(
-        email=user_in.email,
-        full_name=user_in.full_name,
-        hashed_password=get_password_hash(user_in.password),
+        email=user_req.email,
+        full_name=user_req.full_name,
+        hashed_password=get_password_hash(user_req.password),
     )
-
     session.add(user)
     session.commit()
-
     return user

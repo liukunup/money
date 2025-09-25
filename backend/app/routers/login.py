@@ -4,12 +4,11 @@ from datetime import timedelta
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, ORJSONResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.config import settings
 from app.dependencies import SessionDep, CurrentUser, get_current_active_superuser
-from app.models.response import ApiResponse
 from app.models.token import Token
 from app.models.user import UserPublic, NewPassword
 from app.internal import user as user_service
@@ -21,14 +20,13 @@ router = APIRouter(tags=["login"])
 
 @router.post("/login/access-token", summary="用户登录", description="支持用户名or邮箱和密码进行用户登录")
 def access_token(
-    session: SessionDep, form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
+    session: SessionDep,
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()]
 ) -> Token:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = user_service.authenticate(
-        session=session, username=form_data.username, password=form_data.password
-    )
+    user = user_service.auth(session=session, username=form_data.username, password=form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     elif not user.is_active:
@@ -50,7 +48,7 @@ def test_token(current_user: CurrentUser) -> Any:
 
 
 @router.post("/password-recovery/{email}", summary="密码重置", description="通过邮箱重置密码")
-def recover_password(email: str, session: SessionDep) -> ApiResponse:
+def recover_password(email: str, session: SessionDep):
     """
     Password Recovery
     """
@@ -70,11 +68,11 @@ def recover_password(email: str, session: SessionDep) -> ApiResponse:
         subject=email_data.subject,
         html_content=email_data.html_content,
     )
-    return ApiResponse(message="Password recovery email sent")
+    return ORJSONResponse(content={"message": "Password recovery email sent"})
 
 
 @router.post("/reset-password/", summary="重置密码", description="通过重置密码令牌重置密码")
-def reset_password(session: SessionDep, body: NewPassword) -> ApiResponse:
+def reset_password(session: SessionDep, body: NewPassword):
     """
     Reset password
     """
@@ -93,7 +91,7 @@ def reset_password(session: SessionDep, body: NewPassword) -> ApiResponse:
     user.hashed_password = hashed_password
     session.add(user)
     session.commit()
-    return ApiResponse(message="Password updated successfully")
+    return ORJSONResponse(content={"message": "Password updated successfully"})
 
 
 @router.post(

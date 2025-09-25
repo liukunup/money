@@ -25,7 +25,7 @@ Write-Host "🔌 激活虚拟环境..." -ForegroundColor Yellow
 
 # 4. 安装项目依赖
 Write-Host "📥 安装项目（含依赖）..." -ForegroundColor Yellow
-uv pip install . --link-mode=copy
+uv pip install --link-mode=copy .
 
 # 5. 验证安装
 Write-Host "✅ 环境设置完成！" -ForegroundColor Green

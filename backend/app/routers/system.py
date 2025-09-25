@@ -1,3 +1,5 @@
+# -*- coding: UTF-8 -*-
+
 from fastapi import APIRouter, Depends
 from fastapi.responses import ORJSONResponse
 from pydantic.networks import EmailStr
@@ -16,8 +18,9 @@ async def readiness():
     content={
         "code": 200,
         "message": "ok",
+        "timestamp": datetime.now(datetime.timezone.utc),
     }
-    # 这里可以添加更多的就绪检查逻辑，比如数据库连接检查等
+    # TODO: 可以添加更多的就绪检查逻辑，比如数据库连接检查等
     return ORJSONResponse(content=content)
 
 
