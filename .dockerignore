@@ -1,0 +1,15 @@
+# .dockerignore
+.env
+.venv
+__pycache__
+*.pyc
+.git
+.gitignore
+.pytest_cache
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+*.log
+data/
+node_modules/
