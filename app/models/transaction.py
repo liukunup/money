@@ -19,5 +19,5 @@ class Transaction(Base):
     deleted_by = Column(Integer, ForeignKey('users.id'))
 
     # Relationships
-    category = relationship("Category", backref="transactions")
+    category = relationship("Category", back_populates="transactions")
     deleter = relationship("User", foreign_keys=[deleted_by])
