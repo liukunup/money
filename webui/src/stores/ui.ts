@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
+import { setLocale, type LocaleType } from '@/i18n';
 
 export interface ToastMessage {
   id: string;
@@ -11,9 +12,23 @@ export interface ToastMessage {
 export const useUIStore = defineStore('ui', () => {
   // State
   const theme = ref<'light' | 'dark' | 'auto'>('auto');
+  const devicePreference = ref<'desktop' | 'mobile' | 'auto'>('auto');
+  const windowWidth = ref(typeof window !== 'undefined' ? window.innerWidth : 1024);
   const sidebarCollapsed = ref(false);
   const modalOpen = ref(false);
   const toastMessages = ref<ToastMessage[]>([]);
+  const locale = ref<LocaleType>('zh-CN');
+
+  const MOBILE_BREAKPOINT = 768;
+
+  const isMobileMode = computed(() => {
+    if (devicePreference.value === 'auto') {
+      return windowWidth.value < MOBILE_BREAKPOINT;
+    }
+    return devicePreference.value === 'mobile';
+  });
+
+  const deviceMode = computed(() => isMobileMode.value ? 'mobile' : 'desktop');
 
   // Actions
   function setTheme(newTheme: 'light' | 'dark' | 'auto') {
@@ -75,13 +90,69 @@ export const useUIStore = defineStore('ui', () => {
     toastMessages.value = toastMessages.value.filter(t => t.id !== id);
   }
 
+  function setDevicePreference(pref: 'desktop' | 'mobile' | 'auto') {
+    devicePreference.value = pref;
+    localStorage.setItem('devicePreference', pref);
+  }
+
+  function initDevicePreference() {
+    const saved = localStorage.getItem('devicePreference') as 'desktop' | 'mobile' | 'auto' | null;
+    if (saved) {
+      devicePreference.value = saved;
+    }
+    if (typeof window !== 'undefined') {
+      windowWidth.value = window.innerWidth;
+    }
+  }
+
+  function updateWindowWidth() {
+    if (typeof window !== 'undefined') {
+      windowWidth.value = window.innerWidth;
+    }
+  }
+
+  function toggleDeviceView() {
+    const views: Array<'desktop' | 'mobile' | 'auto'> = ['desktop', 'mobile', 'auto'];
+    const currentIndex = views.indexOf(devicePreference.value);
+    const nextView = views[(currentIndex + 1) % views.length];
+    setDevicePreference(nextView);
+  }
+
+  function setLocale(newLocale: LocaleType) {
+    locale.value = newLocale;
+    setLocale(newLocale);
+  }
+
+  function initLocale() {
+    const savedLocale = localStorage.getItem('locale') as LocaleType | null;
+    if (savedLocale && (savedLocale === 'zh-CN' || savedLocale === 'en-US')) {
+      locale.value = savedLocale;
+      setLocale(savedLocale);
+    } else {
+      // Default to Chinese
+      locale.value = 'zh-CN';
+      setLocale('zh-CN');
+    }
+  }
+
   return {
     theme,
+    locale,
+    devicePreference,
+    deviceMode,
+    isMobileMode,
+    windowWidth,
     sidebarCollapsed,
     modalOpen,
     toastMessages,
     setTheme,
     initTheme,
+    setLocale,
+    initLocale,
+    setDevicePreference,
+    initDevicePreference,
+    updateWindowWidth,
+    toggleDeviceView,
     toggleSidebar,
     openModal,
     closeModal,

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
 
@@ -9,6 +9,7 @@ class TransactionBase(BaseModel):
     category_id: int = Field(..., gt=0)
     date: date
     note: Optional[str] = None
+    tag_ids: Optional[List[int]] = Field(default_factory=list, description="List of tag IDs")
 
 class TransactionCreate(TransactionBase):
     pass
@@ -19,6 +20,7 @@ class TransactionUpdate(BaseModel):
     category_id: Optional[int] = None
     date: Optional[date] = None
     note: Optional[str] = None
+    tag_ids: Optional[List[int]] = None
 
 class TransactionResponse(TransactionBase):
     id: int

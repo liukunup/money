@@ -2,18 +2,15 @@ import sys
 sys.path.append('.')
 
 from app.db.database import engine, Base
-from app.models import user, category, transaction
+from app.models import user, category, transaction, budget, tag, time_period, ai_provider
 
 def init_db():
     """初始化数据库"""
-    # 创建所有表
     Base.metadata.create_all(bind=engine)
 
-    # 预设分类数据
     from app.db.database import SessionLocal
     db = SessionLocal()
 
-    # 预设支出分类
     expense_categories = [
         {"name": "餐饮", "type": "expense", "icon": "🍽️"},
         {"name": "交通", "type": "expense", "icon": "🚗"},
@@ -25,7 +22,6 @@ def init_db():
         {"name": "其他", "type": "expense", "icon": "📦"}
     ]
 
-    # 预设收入分类
     income_categories = [
         {"name": "工资", "type": "income", "icon": "💰"},
         {"name": "奖金", "type": "income", "icon": "🎉"},

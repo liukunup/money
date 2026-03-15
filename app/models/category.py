@@ -18,4 +18,5 @@ class Category(Base):
 
     # Relationships
     transactions = relationship("Transaction", back_populates="category")
+    budgets = relationship("Budget", back_populates="category")
     deleter = relationship("User", foreign_keys=[deleted_by])

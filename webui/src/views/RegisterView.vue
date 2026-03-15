@@ -226,13 +226,13 @@ const goToLogin = () => {
 
 .auth-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 360px;
 }
 
 .auth-card {
   background: var(--color-bg-primary);
   border-radius: var(--radius-xl);
-  padding: var(--space-8);
+  padding: var(--space-6);
   box-shadow: var(--shadow-lg);
   animation: slideUp 0.4s var(--ease-bounce);
 }
@@ -251,20 +251,19 @@ const goToLogin = () => {
 /* Header */
 .auth-header {
   text-align: center;
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .auth-logo {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 72px;
-  height: 72px;
+  width: 48px;
+  height: 48px;
   background: linear-gradient(135deg, var(--color-success) 0%, var(--color-primary-light) 100%);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   color: var(--color-text-inverse);
-  margin-bottom: var(--space-4);
-  animation: pulse 2s var(--ease-default) infinite;
+  margin-bottom: var(--space-3);
 }
 
 @keyframes pulse {
@@ -277,14 +276,14 @@ const goToLogin = () => {
 }
 
 .auth-title {
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--space-1);
 }
 
 .auth-subtitle {
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
 }
 
@@ -310,11 +309,11 @@ const goToLogin = () => {
 
 /* Form */
 .auth-form {
-  margin-bottom: var(--space-6);
+  margin-bottom: var(--space-4);
 }
 
 .auth-actions {
-  margin-top: var(--space-6);
+  margin-top: var(--space-4);
 }
 
 /* Links */
@@ -350,19 +349,19 @@ const goToLogin = () => {
   .auth-card {
     border-radius: 0;
     min-height: 100vh;
-    padding: var(--space-6);
+    padding: var(--space-4);
     display: flex;
     flex-direction: column;
     justify-content: center;
   }
 
   .auth-logo {
-    width: 64px;
-    height: 64px;
+    width: 40px;
+    height: 40px;
   }
 
   .auth-title {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
   }
 }
 </style>

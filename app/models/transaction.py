@@ -17,7 +17,10 @@ class Transaction(Base):
     is_deleted = Column(Boolean, default=False, nullable=False)
     deleted_at = Column(DateTime(timezone=True))
     deleted_by = Column(Integer, ForeignKey('users.id'))
+    import_record_id = Column(Integer, ForeignKey('import_records.id'))
 
     # Relationships
     category = relationship("Category", back_populates="transactions")
     deleter = relationship("User", foreign_keys=[deleted_by])
+    tags = relationship("Tag", secondary="transaction_tags", back_populates="transactions")
+    import_record = relationship("ImportRecord", back_populates="transactions")

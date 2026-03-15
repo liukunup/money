@@ -19,6 +19,18 @@ class Settings(BaseSettings):
     # CORS 配置
     BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:8080"]
 
+    # MinIO 配置
+    MINIO_ENABLED: bool = False
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = ""
+    MINIO_SECRET_KEY: str = ""
+    MINIO_SECURE: bool = False
+    MINIO_BUCKET: str = "money-imports"
+
+    # 上传配置
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    ALLOWED_EXTENSIONS: list[str] = [".csv", ".xlsx", ".xls"]
+
     class Config:
         env_file = ".env"
         case_sensitive = True

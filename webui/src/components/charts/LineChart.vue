@@ -151,13 +151,13 @@ const updateChart = () => {
 const formatCurrency = (amount: number, short: boolean = false): string => {
   if (short) {
     if (amount >= 1000) {
-      return `$${(amount / 1000).toFixed(1)}k`
+      return `¥${(amount / 1000).toFixed(1)}k`
     }
-    return `$${amount.toFixed(0)}`
+    return `¥${amount.toFixed(0)}`
   }
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'CNY',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)

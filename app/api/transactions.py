@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from typing import List, Optional
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from app.db.database import get_db
 from app.models.transaction import Transaction
+from app.models.tag import Tag
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
 from app.core.security import get_current_user
 from app.models.user import User
@@ -15,6 +16,7 @@ router = APIRouter()
 def get_transactions(
     type: Optional[str] = None,
     category_id: Optional[int] = None,
+    tag_id: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
     include_deleted: bool = False,
@@ -34,15 +36,29 @@ def get_transactions(
         query = query.filter(Transaction.date >= start_date)
     if end_date:
         query = query.filter(Transaction.date <= end_date)
+    if tag_id:
+        query = query.join(Transaction.tags).filter(Tag.id == tag_id)
 
     transactions = query.order_by(Transaction.date.desc()).all()
     return transactions
 
 @router.post("/", response_model=TransactionResponse, status_code=status.HTTP_201_CREATED)
-def create_transaction(transaction: TransactionCreate, db: Session = Depends(get_db)):
+def create_transaction(
+    transaction: TransactionCreate,
+    db: Session = Depends(get_db)
+):
     """创建交易"""
+    tag_ids = transaction.model_dump().pop('tag_ids', [])
+    
     db_transaction = Transaction(**transaction.model_dump())
     db.add(db_transaction)
+    db.flush()  # Get the transaction ID
+    
+    # Add tags
+    if tag_ids:
+        tags = db.query(Tag).filter(Tag.id.in_(tag_ids), Tag.is_deleted == False).all()
+        db_transaction.tags = tags
+    
     db.commit()
     db.refresh(db_transaction)
     return db_transaction
@@ -78,7 +94,14 @@ def update_transaction(
             detail="交易不存在"
         )
 
-    update_data = transaction.model_dump(exclude_unset=True)
+    update_data = transaction.model_dump(exclude_unset=True, exclude={'tag_ids'})
+    
+    # Handle tag_ids separately
+    tag_ids = update_data.pop('tag_ids', None)
+    if tag_ids is not None:
+        tags = db.query(Tag).filter(Tag.id.in_(tag_ids), Tag.is_deleted == False).all()
+        db_transaction.tags = tags
+    
     for field, value in update_data.items():
         setattr(db_transaction, field, value)
 

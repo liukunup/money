@@ -1,39 +1,43 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
+import { useI18n } from 'vue-i18n';
 import { useTransactionsStore } from '@/stores/transactions';
 import { useCategoriesStore } from '@/stores/categories';
+import { useTagsStore } from '@/stores/tags';
 import { useAuthStore } from '@/stores/auth';
 import type { Transaction, TransactionFilters } from '@/types';
 import TransactionFormModal from '@/components/transaction/TransactionFormModal.vue';
 import TransactionItem from '@/components/transaction/TransactionItem.vue';
 import Button from '@/components/ui/Button.vue';
 
+const { t } = useI18n();
 const transactionsStore = useTransactionsStore();
 const categoriesStore = useCategoriesStore();
+const tagsStore = useTagsStore();
 const authStore = useAuthStore();
 
-// Modal state
 const showFormModal = ref(false);
 const editingTransaction = ref<number | null>(null);
 
-// Fetch categories and transactions on mount
 onMounted(async () => {
   authStore.checkAuth();
-  await categoriesStore.fetchCategories('expense');
-  await transactionsStore.fetchTransactions();
+  await Promise.all([
+    categoriesStore.fetchCategories('expense'),
+    tagsStore.fetchTags(),
+    transactionsStore.fetchTransactions(),
+  ]);
 });
 
-// Format date for display
 const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', {
+  const locale = localStorage.getItem('locale') || 'zh-CN';
+  return date.toLocaleDateString(locale === 'en-US' ? 'en-US' : 'zh-CN', {
     month: 'long',
     day: 'numeric',
     weekday: 'long',
   });
 };
 
-// Group transactions by date
 const groupedTransactions = computed(() => {
   const groups = new Map<string, Transaction[]>();
 
@@ -54,21 +58,18 @@ const groupedTransactions = computed(() => {
     .map(([date, transactions]) => ({ date, transactions }));
 });
 
-// Handle add transaction
 function handleAdd() {
   editingTransaction.value = null;
   showFormModal.value = true;
 }
 
-// Handle edit transaction
 function handleEdit(id: number) {
   editingTransaction.value = id;
   showFormModal.value = true;
 }
 
-// Handle delete transaction
 async function handleDelete(id: number) {
-  if (confirm('Are you sure you want to delete this transaction?')) {
+  if (confirm(t('transactions.deleteConfirm'))) {
     try {
       await transactionsStore.deleteTransaction(id);
     } catch (error) {
@@ -77,40 +78,37 @@ async function handleDelete(id: number) {
   }
 }
 
-// Handle form save
 function handleFormClose() {
   showFormModal.value = false;
   editingTransaction.value = null;
 }
 
-// Apply filters
 function applyFilters() {
   transactionsStore.fetchTransactions({
     type: filterType.value || undefined,
     category_id: filterCategoryId.value || undefined,
+    tag_id: filterTagId.value || undefined,
     start_date: filterStartDate.value || undefined,
     end_date: filterEndDate.value || undefined,
   });
 }
 
-// Clear filters
 function clearFilters() {
   filterType.value = undefined;
   filterCategoryId.value = undefined;
+  filterTagId.value = undefined;
   filterStartDate.value = undefined;
   filterEndDate.value = undefined;
   transactionsStore.clearFilters();
   applyFilters();
 }
 
-// Filter state
 const filterType = ref<'income' | 'expense'>();
 
-// Filter categories for dropdown
 const expenseCategories = computed(() => categoriesStore.expenseCategories);
 const incomeCategories = computed(() => categoriesStore.incomeCategories);
 const allCategories = computed(() => {
-  const placeholder = { id: 0, name: 'All Types', type: 'expense' as const, icon: undefined, created_at: '' };
+  const placeholder = { id: 0, name: t('transactions.allTypes'), type: 'expense' as const, icon: undefined, created_at: '' };
   return [
     placeholder,
     ...expenseCategories.value,
@@ -119,14 +117,13 @@ const allCategories = computed(() => {
 });
 
 const filterCategoryId = ref<number>();
+const filterTagId = ref<number>();
 
-// Date filters
 const filterStartDate = ref<string>();
 const filterEndDate = ref<string>();
 
-// Check if any filters are active
 const hasActiveFilters = computed(() => {
-  return !!filterType.value || !!filterCategoryId.value || !!filterStartDate.value || !!filterEndDate.value;
+  return !!filterType.value || !!filterCategoryId.value || !!filterTagId.value || !!filterStartDate.value || !!filterEndDate.value;
 });
 </script>
 
@@ -134,7 +131,7 @@ const hasActiveFilters = computed(() => {
   <div class="transactions-view">
     <!-- Header -->
     <div class="header">
-      <h1 class="header__title">Transactions</h1>
+      <h1 class="header__title">{{ t('transactions.title') }}</h1>
       
       <Button
         variant="secondary"
@@ -142,7 +139,7 @@ const hasActiveFilters = computed(() => {
         @click="showFormModal = true"
         class="add-btn"
       >
-        + Add
+        + {{ t('common.add') }}
       </Button>
     </div>
 
@@ -150,15 +147,22 @@ const hasActiveFilters = computed(() => {
     <div class="filters">
       <div class="filter-group">
         <select v-model="filterType" class="filter-select" @change="applyFilters">
-          <option :value="undefined">All Types</option>
-          <option value="expense">Expense</option>
-          <option value="income">Income</option>
+          <option :value="undefined">{{ t('transactions.allTypes') }}</option>
+          <option value="expense">{{ t('transactions.expense') }}</option>
+          <option value="income">{{ t('transactions.income') }}</option>
         </select>
 
         <select v-model="filterCategoryId" class="filter-select" @change="applyFilters">
-          <option :value="undefined">All Categories</option>
+          <option :value="undefined">{{ t('transactions.allCategories') }}</option>
           <option v-for="category in allCategories" :key="category.id" :value="category.id">
             {{ category.icon || '' }} {{ category.name }}
+          </option>
+        </select>
+
+        <select v-model="filterTagId" class="filter-select" @change="applyFilters">
+          <option :value="undefined">{{ t('transactions.allTags') }}</option>
+          <option v-for="tag in tagsStore.tags" :key="tag.id" :value="tag.id">
+            {{ tag.icon || '🏷️' }} {{ tag.name }}
           </option>
         </select>
       </div>
@@ -170,7 +174,7 @@ const hasActiveFilters = computed(() => {
           class="filter-date"
           @change="applyFilters"
         />
-        <span class="filter-separator">to</span>
+        <span class="filter-separator">{{ t('transactions.to') }}</span>
         <input
           type="date"
           v-model="filterEndDate"
@@ -183,7 +187,7 @@ const hasActiveFilters = computed(() => {
           size="small"
           @click="clearFilters"
         >
-          Clear
+          {{ t('common.clear') }}
         </Button>
       </div>
     </div>
@@ -204,14 +208,14 @@ const hasActiveFilters = computed(() => {
       <!-- Empty State -->
       <div v-if="!transactionsStore.loading && transactionsStore.transactions.length === 0" class="empty-state">
         <div class="empty-icon">💰</div>
-        <p class="empty-text">No transactions yet</p>
-        <p class="empty-subtext">Add your first transaction to get started</p>
+        <p class="empty-text">{{ t('transactions.noTransactions') }}</p>
+        <p class="empty-subtext">{{ t('transactions.addFirst') }}</p>
       </div>
 
       <!-- Loading State -->
       <div v-if="transactionsStore.loading" class="loading-state">
         <div class="loading-spinner"></div>
-        <p class="loading-text">Loading transactions...</p>
+        <p class="loading-text">{{ t('transactions.loading') }}</p>
       </div>
     </div>
 

@@ -142,9 +142,9 @@ const updateChart = () => {
 }
 
 const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-US', {
+  return new Intl.NumberFormat('zh-CN', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'CNY',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
