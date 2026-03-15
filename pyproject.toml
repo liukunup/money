@@ -1,9 +1,34 @@
 [project]
 name = "money"
 version = "0.1.0"
-description = "Add your description here"
+description = "Money - 极简AI驱动个人记账工具"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi[standard]>=0.115.12",
+    "uvicorn>=0.30.0",
+    "sqlalchemy>=2.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-jose[cryptography]>=3.3.0",
+    "python-multipart>=0.0.9",
+    "pytest>=7.4.0",
+    "httpx>=0.24.0",
+    "email-validator>=2.0.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+]
+
+[project.scripts]
+dev = "uvicorn app.main:app --reload --host 0.0.0.0 --port 8000"
+test = "pytest tests/"
+init-db = "python scripts/init_db.py"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
