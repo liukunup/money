@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from sqlalchemy.sql import func
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 from app.db.database import get_db
 from app.models.transaction import Transaction
 from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionResponse
+from app.core.security import get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
@@ -14,10 +17,14 @@ def get_transactions(
     category_id: Optional[int] = None,
     start_date: Optional[date] = None,
     end_date: Optional[date] = None,
+    include_deleted: bool = False,
     db: Session = Depends(get_db)
 ):
     """获取交易列表（支持筛选）"""
     query = db.query(Transaction)
+
+    if not include_deleted:
+        query = query.filter(Transaction.is_deleted == False)
 
     if type:
         query = query.filter(Transaction.type == type)
@@ -43,7 +50,10 @@ def create_transaction(transaction: TransactionCreate, db: Session = Depends(get
 @router.get("/{transaction_id}", response_model=TransactionResponse)
 def get_transaction(transaction_id: int, db: Session = Depends(get_db)):
     """获取单个交易"""
-    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.is_deleted == False
+    ).first()
     if not transaction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -58,7 +68,10 @@ def update_transaction(
     db: Session = Depends(get_db)
 ):
     """更新交易"""
-    db_transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.is_deleted == False
+    ).first()
     if not db_transaction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -74,14 +87,95 @@ def update_transaction(
     return db_transaction
 
 @router.delete("/{transaction_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_transaction(transaction_id: int, db: Session = Depends(get_db)):
-    """删除交易（软删除将在后续添加）"""
-    db_transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+def delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """软删除交易"""
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.is_deleted == False
+    ).first()
     if not db_transaction:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="交易不存在"
         )
+
+    db_transaction.is_deleted = True
+    db_transaction.deleted_at = datetime.utcnow()
+    db_transaction.deleted_by = current_user.id
+
+    db.commit()
+    return None
+
+@router.post("/{transaction_id}/restore", response_model=TransactionResponse)
+def restore_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db)
+):
+    """恢复已删除的交易"""
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.is_deleted == True
+    ).first()
+    if not db_transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="交易不存在或未被删除"
+        )
+
+    db_transaction.is_deleted = False
+    db_transaction.deleted_at = None
+    db_transaction.deleted_by = None
+
+    db.commit()
+    db.refresh(db_transaction)
+    return db_transaction
+
+@router.get("/recycle-bin/list", response_model=List[TransactionResponse])
+def get_deleted_transactions(
+    db: Session = Depends(get_db)
+):
+    """获取回收站中的交易列表"""
+    transactions = db.query(Transaction).filter(
+        Transaction.is_deleted == True
+    ).order_by(Transaction.deleted_at.desc()).all()
+    return transactions
+
+@router.delete("/recycle-bin/{transaction_id}/permanently", status_code=status.HTTP_204_NO_CONTENT)
+def permanently_delete_transaction(
+    transaction_id: int,
+    db: Session = Depends(get_db)
+):
+    """永久删除交易（从回收站移除）"""
+    db_transaction = db.query(Transaction).filter(
+        Transaction.id == transaction_id,
+        Transaction.is_deleted == True
+    ).first()
+    if not db_transaction:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="交易不存在或未被删除"
+        )
+
     db.delete(db_transaction)
+    db.commit()
+    return None
+
+@router.delete("/recycle-bin/permanently", status_code=status.HTTP_204_NO_CONTENT)
+def permanently_delete_all(
+    days: int = Query(30, description="删除N天前的数据"),
+    db: Session = Depends(get_db)
+):
+    """永久删除N天前软删除的交易"""
+    cutoff_date = datetime.utcnow() - timedelta(days=days)
+
+    db.query(Transaction).filter(
+        Transaction.is_deleted == True,
+        Transaction.deleted_at < cutoff_date
+    ).delete()
+
     db.commit()
     return None
