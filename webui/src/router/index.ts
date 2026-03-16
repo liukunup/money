@@ -14,7 +14,7 @@ import AIProvidersView from '@/views/AIProvidersView.vue'
 import ImportView from '@/views/ImportView.vue'
 import HouseholdView from '@/views/HouseholdView.vue'
 import TimePeriodListView from '@/views/TimePeriodListView.vue'
-import AnomaliesView from '@/views/AnomaliesView.vue'
+import AnomalyListView from '@/views/AnomalyListView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -100,7 +100,7 @@ const router = createRouter({
     {
       path: '/anomalies',
       name: 'anomalies',
-      component: AnomaliesView,
+      component: AnomalyListView,
       meta: { requiresAuth: true }
     },
     {
