@@ -102,6 +102,30 @@
         </div>
       </div>
     </section>
+
+    <section v-if="!transactionsStore.loading" class="anomaly-section">
+      <h2 class="section-title">{{ t('anomaly.title') }}</h2>
+      <div class="anomaly-stats-grid">
+        <div class="anomaly-stat-card warning">
+          <div class="anomaly-stat-icon">⚠️</div>
+          <div class="anomaly-stat-value">{{ anomalyStats.warning }}</div>
+          <div class="anomaly-stat-label">{{ t('anomaly.warning') }}</div>
+        </div>
+        <div class="anomaly-stat-card anomaly">
+          <div class="anomaly-stat-icon">🔴</div>
+          <div class="anomaly-stat-value">{{ anomalyStats.anomaly }}</div>
+          <div class="anomaly-stat-label">{{ t('anomaly.anomaly') }}</div>
+        </div>
+        <div class="anomaly-stat-card alert">
+          <div class="anomaly-stat-icon">🚨</div>
+          <div class="anomaly-stat-value">{{ anomalyStats.alert }}</div>
+          <div class="anomaly-stat-label">{{ t('anomaly.alert') }}</div>
+        </div>
+      </div>
+      <Button variant="secondary" @click="$router.push('/anomalies')">
+        {{ t('anomaly.viewAll') }}
+      </Button>
+    </section>
   </div>
 </template>
 
@@ -145,6 +169,14 @@ const totalTransactions = computed(() => {
   return transactionsStore.transactions.length
 })
 
+const anomalyStats = computed(() => {
+  return {
+    warning: transactionsStore.anomalyStatistics?.warning || 0,
+    anomaly: transactionsStore.anomalyStatistics?.anomaly || 0,
+    alert: transactionsStore.anomalyStatistics?.alert || 0
+  }
+})
+
 const formatCurrency = (amount: number): string => {
   const locale = localStorage.getItem('locale') || 'zh-CN'
   return new Intl.NumberFormat(locale === 'en-US' ? 'en-US' : 'zh-CN', {
@@ -161,6 +193,7 @@ const handleHeatmapPeriodChange = (period: 'week' | 'month' | 'year') => {
 
 onMounted(() => {
   transactionsStore.fetchTransactions()
+  transactionsStore.fetchAnomalies()
   categoriesStore.fetchCategories()
   fetchCashFlow()
   fetchHeatmap('month')
@@ -333,6 +366,54 @@ onMounted(() => {
 
 .stat-value.negative {
   color: var(--color-destructive);
+}
+
+/* Anomaly Section */
+.anomaly-section {
+  margin-top: 24px;
+  padding: 20px;
+  background: var(--color-surface-primary);
+  border-radius: 16px;
+}
+
+.anomaly-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.anomaly-stat-card {
+  text-align: center;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+.anomaly-stat-card.warning {
+  background: rgba(255, 149, 0, 0.1);
+}
+
+.anomaly-stat-card.anomaly {
+  background: rgba(255, 59, 48, 0.1);
+}
+
+.anomaly-stat-card.alert {
+  background: rgba(175, 82, 222, 0.1);
+}
+
+.anomaly-stat-icon {
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.anomaly-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.anomaly-stat-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
 }
 
 /* Responsive Design */
