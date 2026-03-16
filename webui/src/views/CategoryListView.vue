@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
-import { useI18n } from 'vue-i18n';
 import { useCategoriesStore } from '@/stores/categories';
 import { useAuthStore } from '@/stores/auth';
 import Input from '@/components/ui/Input.vue';
 import Button from '@/components/ui/Button.vue';
 
-const { t } = useI18n();
 const router = useRouter();
 const categoriesStore = useCategoriesStore();
 const authStore = useAuthStore();
@@ -19,11 +17,13 @@ const showFormModal = ref(false);
 const showDeleteConfirm = ref(false);
 const categoryToDelete = ref<number | null>(null);
 
+// Load categories on mount
 onMounted(() => {
   authStore.checkAuth();
   categoriesStore.fetchCategories('expense');
 });
 
+// Handle add category
 const handleAdd = () => {
   name.value = '';
   icon.value = '';
@@ -31,6 +31,7 @@ const handleAdd = () => {
   showFormModal.value = true;
 };
 
+// Handle edit category
 const handleEdit = (id: number) => {
   const category = categoriesStore.categories.find(c => c.id === id);
   if (!category) return;
@@ -41,6 +42,7 @@ const handleEdit = (id: number) => {
   categoryToDelete.value = id;
 };
 
+// Handle delete
 const handleDeleteClick = (id: number) => {
   showDeleteConfirm.value = true;
   categoryToDelete.value = id;
@@ -57,6 +59,7 @@ const confirmDelete = async () => {
   }
 };
 
+// Handle form submit
 const handleSubmit = async () => {
   if (!name.value.trim()) {
     return;
@@ -64,6 +67,7 @@ const handleSubmit = async () => {
 
   try {
     if (categoryToDelete.value) {
+      // Editing existing category
       await categoriesStore.deleteCategory(categoryToDelete.value);
       categoryToDelete.value = null;
     }
@@ -76,6 +80,7 @@ const handleSubmit = async () => {
       });
     }
 
+    // Close modal and reset form
     showFormModal.value = false;
     name.value = '';
     icon.value = '';
@@ -85,12 +90,14 @@ const handleSubmit = async () => {
   }
 };
 
+// Handle modal close
 const handleCloseModal = () => {
   showFormModal.value = false;
   categoryToDelete.value = null;
   showDeleteConfirm.value = false;
 };
 
+// Common icons
 const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', '🎓', '💰', '🏡', '🎥', '💼', '🏥', '📔', '🏙', '💵', '💯'];
 </script>
 
@@ -98,13 +105,13 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
   <div class="categories-view">
     <!-- Header -->
     <div class="header">
-      <h1 class="header__title">{{ t('categories.title') }}</h1>
+      <h1 class="header__title">Categories</h1>
       <Button
         variant="primary"
         size="medium"
         @click="handleAdd"
       >
-        {{ t('categories.addCategory') }}
+        Add Category
       </Button>
     </div>
 
@@ -114,13 +121,13 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
         :class="{ 'tabs__tab': type === 'expense' ? 'tabs__tab--active' : '' }"
         @click="type = 'expense'"
       >
-        {{ t('categories.expense') }}
+        Expense
       </button>
       <button
         :class="{ 'tabs__tab': type === 'income' ? 'tabs__tab--active' : '' }"
         @click="type = 'income'"
       >
-        {{ t('categories.income') }}
+        Income
       </button>
     </div>
 
@@ -146,6 +153,7 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
           <path d="M6 18L6 18v-12c-4 0 0 1 12-1-12 2 12-12z"></path>
           </svg>
         </button>
+      </div>
       </div>
 
       <div
@@ -173,14 +181,14 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
     <!-- Empty State -->
     <div v-if="!categoriesStore.loading && categoriesStore.categories.length === 0" class="empty-state">
       <div class="empty-icon">💰</div>
-      <p class="empty-text">{{ t('categories.noCategories') }}</p>
-      <p class="empty-subtext">{{ t('categories.addFirst') }}</p>
+      <p class="empty-text">No categories yet</p>
+      <p class="empty-subtext">Click "Add Category" to create your first category</p>
     </div>
 
     <!-- Loading State -->
     <div v-if="categoriesStore.loading" class="loading-state">
       <div class="loading-spinner"></div>
-      <p class="loading-text">{{ t('common.loading') }}</p>
+      <p class="loading-text">Loading categories...</p>
     </div>
 
     <!-- Category Form Modal -->
@@ -188,7 +196,7 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
       <div class="modal-container" @click.stop>
         <div class="modal-header">
           <h2 class="modal-title">
-            {{ categoryToDelete ? t('categories.deleteCategory') : (showDeleteConfirm ? t('common.edit') : t('categories.addCategory')) }}
+            {{ categoryToDelete ? 'Delete Category' : (showDeleteConfirm ? 'Edit' : 'Add') }}
           </h2>
           <button class="modal-close" @click="handleCloseModal" aria-label="Close">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
@@ -203,21 +211,21 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
           <!-- Type -->
           <div class="form-group">
             <div class="form-group">
-              <label>{{ t('categories.categoryType') }}</label>
+              <label>Category Type</label>
               <div class="segmented-control">
                 <button
                   type="button"
                   :class="{ active: type === 'expense' }"
                   @click="type = 'expense'"
                 >
-                  {{ t('categories.expense') }}
+                  Expense
                 </button>
                 <button
                   type="button"
                   :class="{ active: type === 'income' }"
                   @click="type = 'income'"
                 >
-                  {{ t('categories.income') }}
+                  Income
                 </button>
               </div>
             </div>
@@ -227,14 +235,14 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
           <Input
             v-model="name"
             type="text"
-            :label="t('categories.categoryName')"
-            :placeholder="t('categories.categoryName')"
+            label="Category Name"
+            placeholder="Enter category name"
             :required="true"
           />
 
           <!-- Icon -->
           <div class="form-group">
-            <label>{{ t('categories.icon') }}</label>
+            <label>Icon</label>
             <div class="icon-grid">
               <button
                 v-for="iconOption in iconOptions"
@@ -250,28 +258,28 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
           <!-- Actions -->
           <div class="form-actions">
             <Button type="button" variant="tertiary" @click="handleCloseModal">
-              {{ t('common.cancel') }}
+              Cancel
             </Button>
             <Button
               type="submit"
               variant="primary"
               :loading="categoriesStore.loading"
             >
-              {{ categoriesStore.loading ? t('categories.saving') : t('common.save') }}
+              {{ categoriesStore.loading ? 'Saving...' : 'Save' }}
             </Button>
           </div>
         </form>
 
         <!-- Delete Confirmation -->
         <div v-if="showDeleteConfirm" class="delete-confirm">
-          <p class="delete-confirm__message">{{ t('categories.deleteConfirm') }}</p>
+          <p class="delete-confirm__message">Are you sure you want to delete this category? This action cannot be undone.</p>
           <div class="delete-confirm__actions">
             <Button
               type="button"
               variant="tertiary"
               @click="showDeleteConfirm = false"
             >
-              {{ t('common.cancel') }}
+              Cancel
             </Button>
             <Button
               type="submit"
@@ -279,13 +287,12 @@ const iconOptions = ['🍽️', '🚗', '🛒', '🎬', '🏠', '💊', '📚', 
               :loading="categoriesStore.loading"
               @click="confirmDelete"
             >
-              {{ t('common.delete') }}
+              Delete
             </Button>
           </div>
           </div>
         </div>
       </div>
-    </div>
 </template>
 
 <style scoped>

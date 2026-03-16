@@ -1,68 +1,46 @@
 <template>
-  <div class="dashboard" ref="dashboardRef">
+  <div class="dashboard">
     <!-- Header -->
     <header class="dashboard-header">
-      <div class="header-content">
-        <div class="header-text">
-          <h1 class="dashboard-title">{{ t('dashboard.title') }}</h1>
-          <p class="dashboard-subtitle">{{ t('dashboard.subtitle') }}</p>
-        </div>
-        <div class="header-actions">
-          <button
-            class="action-btn"
-            @click="handleDownload"
-            :title="t('dashboard.downloadScreenshot')"
-            :aria-label="t('dashboard.downloadScreenshot')"
-          >
-            <span class="action-icon">📥</span>
-          </button>
-          <button
-            class="action-btn"
-            @click="handleShare"
-            :title="t('dashboard.share')"
-            :aria-label="t('dashboard.share')"
-          >
-            <span class="action-icon">📤</span>
-          </button>
-        </div>
-      </div>
+      <h1 class="dashboard-title">Dashboard</h1>
+      <p class="dashboard-subtitle">Your financial overview</p>
     </header>
 
     <!-- Summary Cards -->
     <section v-if="!transactionsStore.loading" class="summary-cards">
       <Card variant="elevated" class="summary-card balance-card">
         <div class="card-content">
-          <div class="card-label">{{ t('dashboard.currentBalance') }}</div>
+          <div class="card-label">Current Balance</div>
           <div class="card-value" :class="{ positive: balance >= 0, negative: balance < 0 }">
             {{ formatCurrency(balance) }}
           </div>
           <div class="card-trend">
-            <span v-if="balance >= 0">{{ t('dashboard.positive') }}</span>
-            <span v-else class="negative">{{ t('dashboard.negative') }}</span>
+            <span v-if="balance >= 0">Positive</span>
+            <span v-else class="negative">Negative</span>
           </div>
         </div>
       </Card>
 
       <Card variant="elevated" class="summary-card income-card">
         <div class="card-content">
-          <div class="card-label">{{ t('dashboard.incomeThisMonth') }}</div>
+          <div class="card-label">Income (This Month)</div>
           <div class="card-value positive">
             +{{ formatCurrency(totalIncome) }}
           </div>
           <div class="card-trend">
-            {{ transactionCount }} {{ transactionCount !== 1 ? t('dashboard.transactions') : t('dashboard.transaction') }}
+            {{ transactionCount }} transaction{{ transactionCount !== 1 ? 's' : '' }}
           </div>
         </div>
       </Card>
 
       <Card variant="elevated" class="summary-card expense-card">
         <div class="card-content">
-          <div class="card-label">{{ t('dashboard.expenseThisMonth') }}</div>
+          <div class="card-label">Expense (This Month)</div>
           <div class="card-value negative">
             -{{ formatCurrency(totalExpense) }}
           </div>
           <div class="card-trend">
-            {{ t('dashboard.avgPerDay', { amount: formatCurrency(averageDailyExpense) }) }}
+            Avg. {{ formatCurrency(averageDailyExpense) }}/day
           </div>
         </div>
       </Card>
@@ -82,13 +60,13 @@
     <!-- Recent Transactions -->
     <section class="recent-transactions">
       <div class="section-header">
-        <h2 class="section-title">{{ t('dashboard.recentTransactions') }}</h2>
+        <h2 class="section-title">Recent Transactions</h2>
         <Button
           variant="tertiary"
           size="small"
           @click="$router.push('/transactions')"
         >
-          {{ t('common.viewAll') }}
+          View All
         </Button>
       </div>
 
@@ -104,9 +82,9 @@
 
       <div v-else-if="recentTransactions.length === 0" class="empty-state">
         <div class="empty-icon">💸</div>
-        <p class="empty-message">{{ t('dashboard.noTransactions') }}</p>
+        <p class="empty-message">No transactions yet</p>
         <Button variant="primary" @click="showAddModal = true">
-          {{ t('dashboard.addFirstTransaction') }}
+          Add Your First Transaction
         </Button>
       </div>
 
@@ -144,23 +122,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import Card from '@/components/ui/Card.vue'
 import Button from '@/components/ui/Button.vue'
 import TransactionItem from '@/components/transaction/TransactionItem.vue'
 import TransactionFormModal from '@/components/transaction/TransactionFormModal.vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useStatistics } from '@/composables/useStatistics'
-import { captureAndDownload, captureAndShare } from '@/utils/screenshot'
 import type { Transaction, TransactionCreate, TransactionUpdate } from '@/types/models'
 
+const router = useRouter()
 const transactionsStore = useTransactionsStore()
-const { t } = useI18n()
 
-const dashboardRef = ref<HTMLElement | null>(null)
-const isCapturing = ref(false)
-
+// Use statistics composable
 const {
   balance,
   totalIncome,
@@ -170,19 +145,21 @@ const {
   averageDailyExpense,
 } = useStatistics()
 
+// Modal state
 const showAddModal = ref(false)
 const editingTransaction = ref<Transaction | undefined>(undefined)
 
+// Format currency
 const formatCurrency = (amount: number): string => {
-  const locale = localStorage.getItem('locale') || 'zh-CN'
-  return new Intl.NumberFormat(locale === 'en-US' ? 'en-US' : 'zh-CN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: locale === 'en-US' ? 'USD' : 'CNY',
+    currency: 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount)
 }
 
+// Handle edit transaction
 const handleEditTransaction = (id: number) => {
   const transaction = transactionsStore.transactions.find(t => t.id === id)
   if (transaction) {
@@ -191,13 +168,15 @@ const handleEditTransaction = (id: number) => {
   }
 }
 
+// Handle delete transaction
 const handleDeleteTransaction = async (id: number) => {
   const transaction = transactionsStore.transactions.find(t => t.id === id)
-  if (transaction && confirm(t('transactions.deleteConfirm'))) {
+  if (transaction && confirm(`Delete transaction "${transaction.note || 'No note'}"?`)) {
     await transactionsStore.deleteTransaction(id)
   }
 }
 
+// Handle save transaction
 const handleSaveTransaction = async (data: TransactionCreate) => {
   if (editingTransaction.value) {
     const updateData: TransactionUpdate = {
@@ -214,42 +193,13 @@ const handleSaveTransaction = async (data: TransactionCreate) => {
   handleCloseModal()
 }
 
+// Handle close modal
 const handleCloseModal = () => {
   showAddModal.value = false
   editingTransaction.value = undefined
 }
 
-const handleDownload = async () => {
-  if (!dashboardRef.value || isCapturing.value) return
-  
-  isCapturing.value = true
-  try {
-    const filename = `money-dashboard-${new Date().toISOString().split('T')[0]}.png`
-    await captureAndDownload(dashboardRef.value, filename)
-  } catch (error) {
-    console.error('Failed to download screenshot:', error)
-  } finally {
-    isCapturing.value = false
-  }
-}
-
-const handleShare = async () => {
-  if (!dashboardRef.value || isCapturing.value) return
-  
-  isCapturing.value = true
-  try {
-    await captureAndShare(
-      dashboardRef.value,
-      t('dashboard.shareTitle'),
-      t('dashboard.shareText')
-    )
-  } catch (error) {
-    console.error('Failed to share screenshot:', error)
-  } finally {
-    isCapturing.value = false
-  }
-}
-
+// Load transactions on mount
 transactionsStore.fetchTransactions()
 </script>
 
@@ -258,51 +208,12 @@ transactionsStore.fetchTransactions()
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  padding-bottom: 100px;
+  padding-bottom: 100px; /* Space for FAB */
 }
 
+/* Header */
 .dashboard-header {
   margin-bottom: 32px;
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-}
-
-.header-text {
-  flex: 1;
-}
-
-.header-actions {
-  display: flex;
-  gap: var(--space-2);
-}
-
-.action-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  border: 1px solid var(--color-separator-opaque);
-  background: var(--color-bg-primary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all var(--duration-fast) var(--ease-default);
-}
-
-.action-btn:hover {
-  background: var(--color-bg-tertiary);
-}
-
-.action-btn:active {
-  transform: scale(0.95);
-}
-
-.action-icon {
-  font-size: 18px;
 }
 
 .dashboard-title {
@@ -319,6 +230,7 @@ transactionsStore.fetchTransactions()
   margin: 0;
 }
 
+/* Summary Cards */
 .summary-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -376,6 +288,7 @@ transactionsStore.fetchTransactions()
   color: var(--color-destructive);
 }
 
+/* Skeleton Loading */
 .skeleton-content {
   display: flex;
   flex-direction: column;
@@ -418,6 +331,7 @@ transactionsStore.fetchTransactions()
   }
 }
 
+/* Recent Transactions */
 .recent-transactions {
   background: var(--color-surface-primary);
   border-radius: var(--radius-xl);
@@ -445,6 +359,7 @@ transactionsStore.fetchTransactions()
   gap: 12px;
 }
 
+/* Skeleton List */
 .skeleton-list {
   display: flex;
   flex-direction: column;
@@ -481,6 +396,7 @@ transactionsStore.fetchTransactions()
   gap: 8px;
 }
 
+/* Empty State */
 .empty-state {
   display: flex;
   flex-direction: column;
@@ -501,6 +417,7 @@ transactionsStore.fetchTransactions()
   margin: 0 0 24px 0;
 }
 
+/* FAB */
 .fab {
   position: fixed;
   bottom: 24px;
@@ -531,6 +448,7 @@ transactionsStore.fetchTransactions()
   line-height: 1;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
   .dashboard {
     padding: 16px;
@@ -569,19 +487,6 @@ transactionsStore.fetchTransactions()
 
   .fab-icon {
     font-size: 28px;
-  }
-
-  .header-actions {
-    gap: var(--space-1);
-  }
-
-  .action-btn {
-    width: 36px;
-    height: 36px;
-  }
-
-  .action-icon {
-    font-size: 16px;
   }
 }
 

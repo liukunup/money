@@ -1,12 +1,14 @@
 <template>
   <div class="statistics">
+    <!-- Header -->
     <header class="statistics-header">
-      <h1 class="statistics-title">{{ t('statistics.title') }}</h1>
-      <p class="statistics-subtitle">{{ t('statistics.subtitle') }}</p>
+      <h1 class="statistics-title">Statistics</h1>
+      <p class="statistics-subtitle">Your financial insights</p>
     </header>
 
+    <!-- Loading State -->
     <div v-if="transactionsStore.loading || categoriesStore.loading" class="loading-state">
-      <Card v-for="i in 4" :key="i" variant="elevated" class="chart-card skeleton">
+      <Card v-for="i in 2" :key="i" variant="elevated" class="chart-card skeleton">
         <div class="skeleton-content">
           <div class="skeleton-line title"></div>
           <div class="skeleton-line chart"></div>
@@ -14,88 +16,78 @@
       </Card>
     </div>
 
+    <!-- Charts -->
     <div v-else class="charts-container">
+      <!-- Trend Chart -->
       <Card variant="elevated" class="chart-card">
         <LineChart
-          :title="trendTitle"
+          :title="`${new Date().toLocaleDateString('en-US', { month: 'long' })} Trend (30 Days)`"
           :x-data="trendData.dates"
           :series="[
-            { name: t('transactions.income'), data: trendData.income, color: '#34C759' },
-            { name: t('transactions.expense'), data: trendData.expense, color: '#FF3B30' },
+            { name: 'Income', data: trendData.income, color: '#34C759' },
+            { name: 'Expense', data: trendData.expense, color: '#FF3B30' },
           ]"
         />
       </Card>
 
+      <!-- Category Distribution -->
       <Card v-if="categoryDistribution.length > 0" variant="elevated" class="chart-card">
         <PieChart
-          :title="t('statistics.expenseDistribution')"
+          title="Expense Distribution"
           :data="categoryDistribution"
           :show-icon="true"
           :get-icon="getCategoryIcon"
         />
       </Card>
 
+      <!-- Empty State for Categories -->
       <Card v-else variant="elevated" class="chart-card empty-card">
         <div class="empty-state">
           <div class="empty-icon">📊</div>
-          <p class="empty-message">{{ t('statistics.noExpenseData') }}</p>
+          <p class="empty-message">No expense data for this month</p>
           <Button variant="tertiary" @click="$router.push('/transactions')">
-            {{ t('statistics.addTransactions') }}
+            Add Transactions
           </Button>
         </div>
       </Card>
 
+      <!-- Monthly Comparison -->
       <Card variant="elevated" class="chart-card">
         <LineChart
-          :title="t('statistics.monthlyComparison')"
+          title="Monthly Comparison (6 Months)"
           :x-data="monthlyComparison.months"
           :series="[
-            { name: t('transactions.income'), data: monthlyComparison.income, color: '#34C759' },
-            { name: t('transactions.expense'), data: monthlyComparison.expense, color: '#FF3B30' },
+            { name: 'Income', data: monthlyComparison.income, color: '#34C759' },
+            { name: 'Expense', data: monthlyComparison.expense, color: '#FF3B30' },
           ]"
-        />
-      </Card>
-
-      <Card variant="elevated" class="chart-card">
-        <SankeyChart
-          :title="t('statistics.cashFlow')"
-          :nodes="sankeyNodes"
-          :links="sankeyLinks"
-        />
-      </Card>
-
-      <Card variant="elevated" class="chart-card">
-        <HeatmapChart
-          :title="t('statistics.spendingHabits')"
-          :data="heatmapData"
-          @period-change="handleHeatmapPeriodChange"
         />
       </Card>
     </div>
 
+    <!-- Summary Stats -->
     <section v-if="!transactionsStore.loading" class="summary-stats">
-      <h2 class="section-title">{{ t('statistics.summary') }}</h2>
+      <h2 class="section-title">Summary</h2>
       <div class="stats-grid">
         <div class="stat-item">
-          <div class="stat-label">{{ t('statistics.totalIncome') }}</div>
+          <div class="stat-label">Total Income (6 Months)</div>
           <div class="stat-value positive">
             {{ formatCurrency(totalSixMonthIncome) }}
           </div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">{{ t('statistics.totalExpense') }}</div>
+          <div class="stat-label">Total Expense (6 Months)</div>
           <div class="stat-value negative">
             {{ formatCurrency(totalSixMonthExpense) }}
           </div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">{{ t('statistics.netBalance') }}</div>
+          <div class="stat-label">Net Balance</div>
           <div class="stat-value" :class="{ positive: netBalance >= 0, negative: netBalance < 0 }">
             {{ formatCurrency(netBalance) }}
           </div>
         </div>
         <div class="stat-item">
-          <div class="stat-label">{{ t('statistics.totalTransactions') }}</div>
+          <div class="stat-label">Total Transactions</div>
           <div class="stat-value">
             {{ totalTransactions }}
           </div>
@@ -106,29 +98,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useI18n } from 'vue-i18n'
+import { computed } from 'vue'
 import Card from '@/components/ui/Card.vue'
 import Button from '@/components/ui/Button.vue'
-import { LineChart, PieChart, SankeyChart, HeatmapChart } from '@/components/charts'
+import LineChart from '@/components/charts/LineChart.vue'
+import PieChart from '@/components/charts/PieChart.vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useCategoriesStore } from '@/stores/categories'
 import { useChartData } from '@/composables/useChartData'
-import { useAnalyticsData } from '@/composables/useAnalyticsData'
 
-const { t } = useI18n()
 const transactionsStore = useTransactionsStore()
 const categoriesStore = useCategoriesStore()
 
+// Use chart data composable
 const { trendData, categoryDistribution, monthlyComparison, getCategoryIcon } = useChartData()
-const { sankeyNodes, sankeyLinks, heatmapData, fetchCashFlow, fetchHeatmap } = useAnalyticsData()
 
-const trendTitle = computed(() => {
-  const locale = localStorage.getItem('locale') || 'zh-CN'
-  const monthName = new Date().toLocaleDateString(locale === 'en-US' ? 'en-US' : 'zh-CN', { month: 'long' })
-  return t('statistics.trendTitle', { month: monthName })
-})
-
+// Calculate summary stats
 const totalSixMonthIncome = computed(() => {
   return (monthlyComparison.value.income as number[]).reduce((sum: number, val: number) => sum + val, 0)
 })
@@ -145,26 +130,19 @@ const totalTransactions = computed(() => {
   return transactionsStore.transactions.length
 })
 
+// Format currency
 const formatCurrency = (amount: number): string => {
-  const locale = localStorage.getItem('locale') || 'zh-CN'
-  return new Intl.NumberFormat(locale === 'en-US' ? 'en-US' : 'zh-CN', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: locale === 'en-US' ? 'USD' : 'CNY',
+    currency: 'USD',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(amount)
 }
 
-const handleHeatmapPeriodChange = (period: 'week' | 'month' | 'year') => {
-  fetchHeatmap(period)
-}
-
-onMounted(() => {
-  transactionsStore.fetchTransactions()
-  categoriesStore.fetchCategories()
-  fetchCashFlow()
-  fetchHeatmap('month')
-})
+// Load data on mount
+transactionsStore.fetchTransactions()
+categoriesStore.fetchCategories()
 </script>
 
 <style scoped>

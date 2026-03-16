@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue';
 
 interface Props {
   modelValue?: string;
-  type?: 'text' | 'email' | 'password' | 'number' | 'select' | 'date';
+  type?: 'text' | 'email' | 'password' | 'number' | 'select';
   label?: string;
   placeholder?: string;
   error?: string | null;
@@ -98,19 +98,6 @@ defineExpose({
 
 <template>
   <div class="input-wrapper" :class="{ 'input-wrapper--error': error, 'input-wrapper--disabled': disabled }">
-    <!-- Label (always visible above input) -->
-    <label
-      v-if="label"
-      :for="inputId"
-      class="input-label"
-      :class="{
-        'input-label--error': error,
-      }"
-    >
-      {{ label }}
-      <span v-if="required" class="input-label__required">*</span>
-    </label>
-    
     <div class="input-container">
       <input
         v-if="type !== 'select'"
@@ -118,7 +105,7 @@ defineExpose({
         ref="inputRef"
         :type="inputType"
         :value="modelValue"
-        :placeholder="placeholder"
+        :placeholder="isFocused ? placeholder : ''"
         :disabled="disabled"
         :required="required"
         :name="name"
@@ -163,6 +150,7 @@ defineExpose({
 
 <style scoped>
 .input-wrapper {
+  position: relative;
   width: 100%;
   margin-bottom: var(--space-4);
 }
@@ -174,8 +162,8 @@ defineExpose({
 
 .input-field {
   width: 100%;
-  height: 48px;
-  padding: var(--space-3) var(--space-4);
+  height: 52px;
+  padding: 24px var(--space-4) var(--space-2);
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--color-text-primary);
@@ -187,8 +175,7 @@ defineExpose({
 }
 
 .input-field::placeholder {
-  color: var(--color-text-secondary);
-  opacity: 0.7;
+  color: transparent;
 }
 
 .input-field:focus {
@@ -210,13 +197,27 @@ defineExpose({
   opacity: 0.7;
 }
 
-/* Label - placed above input */
+/* Floating Label */
 .input-label {
-  display: block;
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-primary);
-  margin-bottom: var(--space-2);
+  position: absolute;
+  left: var(--space-4);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+  transition: all var(--duration-fast) var(--ease-default);
+}
+
+.input-label--floating {
+  top: 10px;
+  transform: translateY(0);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.input-label--focused {
+  color: var(--color-primary);
 }
 
 .input-label--error {
@@ -226,6 +227,25 @@ defineExpose({
 .input-label__required {
   color: var(--color-error);
   margin-left: 2px;
+}
+
+/* Password Toggle */
+.input-toggle {
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  padding: var(--space-1);
+  background: none;
+  border: none;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast) var(--ease-default);
+}
+
+.input-toggle:hover {
+  color: var(--color-text-primary);
 }
 
 /* Error & Helper Text */
