@@ -26,6 +26,11 @@ export interface Transaction {
   note?: string;
   created_at: string;
   tag_ids?: number[];
+  anomaly_info?: {
+    anomaly_level?: 'warning' | 'anomaly' | 'alert' | null;
+    category_monthly_average?: string | null;
+    anomaly_reason?: string | null;
+  };
 }
 
 export interface Tag {
