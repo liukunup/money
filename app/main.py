@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api import users, categories, transactions, budgets, tags, time_periods, recycle_bin, text_parse, ai, imports, files, household, ocr, analytics, anomalies
+from app.api import users, categories, transactions, budgets, tags, time_periods, recycle_bin, text_parse, ai, imports, files, household, ocr, analytics, anomalies, anomaly_settings
 
 app = FastAPI(title=settings.APP_NAME, version=settings.APP_VERSION)
 
@@ -27,6 +27,7 @@ app.include_router(household.router, prefix="/api/households", tags=["households
 app.include_router(ocr.router, prefix="/api/ocr", tags=["ocr"])
 app.include_router(analytics.router, prefix="/api/analytics", tags=["analytics"])
 app.include_router(anomalies.router, prefix="/api", tags=["anomalies"])
+app.include_router(anomaly_settings.router, prefix="/api", tags=["settings"])
 
 @app.get("/")
 async def root():
