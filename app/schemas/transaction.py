@@ -3,6 +3,14 @@ from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
 
+
+class TransactionAnomalyInfo(BaseModel):
+    """Anomaly detection information for a transaction."""
+    anomaly_level: Optional[str] = Field(None, description="warning | anomaly | alert | None")
+    category_monthly_average: Optional[Decimal] = Field(None, description="Monthly average for category")
+    anomaly_reason: Optional[str] = Field(None, description="Human-readable reason")
+
+
 class TransactionBase(BaseModel):
     amount: Decimal = Field(..., gt=0, decimal_places=2)
     type: str = Field(..., pattern="^(income|expense)$")
@@ -25,5 +33,6 @@ class TransactionUpdate(BaseModel):
 class TransactionResponse(TransactionBase):
     id: int
     created_at: datetime
+    anomaly_info: Optional[TransactionAnomalyInfo] = None
 
     model_config = ConfigDict(from_attributes=True)
