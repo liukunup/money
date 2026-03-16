@@ -149,6 +149,26 @@
     "netBalance": "净余额",
     "totalTransactions": "交易总数"
   },
+  "anomaly": {
+    "title": "异常交易",
+    "subtitle": "检测到的不正常交易记录",
+    "warning": "警告",
+    "anomaly": "异常",
+    "alert": "alert",
+    "all": "全部",
+    "noAnomalies": "没有发现异常交易",
+    "warningCount": "警告次数",
+    "anomalyCount": "异常次数",
+    "alertCount": "alert次数",
+    "viewAll": "查看全部",
+    "settings": "异常检测设置",
+    "warningThreshold": "警告阈值",
+    "warningThresholdHint": "当交易金额超过分类月均值的多少倍时显示警告",
+    "anomalyThreshold": "异常阈值",
+    "anomalyThresholdHint": "当交易金额超过分类月均值的多少倍时标记为异常",
+    "largeTransactionThreshold": "大额交易阈值",
+    "largeTransactionThresholdHint": "超过此金额的交易将被标记为alert"
+  },
   "budgets": {
     "title": "预算",
     "subtitle": "管理您的支出限额",
