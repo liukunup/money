@@ -57,6 +57,11 @@
       </Card>
     </section>
 
+    <!-- Prediction Card -->
+    <section class="prediction-section">
+      <PredictionCard :show-comparison="true" />
+    </section>
+
     <!-- Recent Transactions -->
     <section class="recent-transactions">
       <div class="section-header">
@@ -128,6 +133,7 @@ import Card from '@/components/ui/Card.vue'
 import Button from '@/components/ui/Button.vue'
 import TransactionItem from '@/components/transaction/TransactionItem.vue'
 import TransactionFormModal from '@/components/transaction/TransactionFormModal.vue'
+import PredictionCard from '@/components/prediction/PredictionCard.vue'
 import { useTransactionsStore } from '@/stores/transactions'
 import { useStatistics } from '@/composables/useStatistics'
 import type { Transaction, TransactionCreate, TransactionUpdate } from '@/types/models'
@@ -235,6 +241,10 @@ transactionsStore.fetchTransactions()
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 16px;
+  margin-bottom: 32px;
+}
+
+.prediction-section {
   margin-bottom: 32px;
 }
 

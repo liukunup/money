@@ -1,11 +1,22 @@
+"""
+OCR API - Upload receipt screenshots and extract transaction data
+Supports multiple providers: Tesseract (local), Regex-based parsing
+"""
+
 import re
-from fastapi import APIRouter, UploadFile, File, Depends
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
+from typing import Optional
+
 from app.db.database import get_db
+from app.core.security import get_current_user
 from app.models.user import User
-from app.api.users import get_current_user
+from app.services.ocr import OCRService, get_ocr_service
 
 router = APIRouter()
+
+# Allowed image extensions
+ALLOWED_IMAGE_EXTENSIONS = {'.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp'}
 
 
 def parse_amount(text: str) -> float | None:
@@ -85,19 +96,84 @@ def categorize_by_merchant(merchant: str | None) -> str:
 @router.post("/parse-image")
 async def parse_receipt_image(
     file: UploadFile = File(...),
+    provider: str = "auto",
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """Parse receipt/screenshot image using regex-based OCR fallback"""
-    # For now, return a placeholder response
-    # In production, you would integrate with an OCR service
+    """
+    Parse receipt/screenshot image and extract transaction data
+    
+    Args:
+        file: Image file (jpg, png, etc.)
+        provider: OCR provider - "auto", "tesseract", "regex"
+    
+    Returns:
+        Extracted transaction data (amount, date, merchant, category)
+    """
+    # Validate file type
+    ext = file.filename.split('.')[-1].lower() if file.filename else ''
+    if f'.{ext}' not in ALLOWED_IMAGE_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"不支持的图片格式: {ext}. 支持的格式: jpg, png, gif, bmp, webp"
+        )
+    
+    # Read file content
+    content = await file.read()
+    
+    # Validate file size (max 10MB)
+    if len(content) > 10 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="图片大小超过限制: 10MB"
+        )
+    
+    # Process image with OCR service
+    ocr_service: OCRService = get_ocr_service(db)
+    
+    try:
+        result = ocr_service.process_image(content, provider)
+    except ImportError as e:
+        return {
+            "success": False,
+            "message": f"OCR服务不可用: {str(e)}",
+            "amount": None,
+            "date": None,
+            "merchant": None,
+            "category": "其他"
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "message": f"OCR处理失败: {str(e)}",
+            "amount": None,
+            "date": None,
+            "merchant": None,
+            "category": "其他"
+        }
+    
+    # Check if we got meaningful results
+    if result.amount is None and not result.raw_text:
+        return {
+            "success": False,
+            "message": "无法从图片中提取交易信息，请尝试手动输入或使用文本粘贴功能",
+            "amount": None,
+            "date": None,
+            "merchant": None,
+            "category": "其他"
+        }
+    
     return {
-        "success": False,
-        "message": "OCR service not configured. Please use text paste instead.",
-        "amount": None,
-        "date": None,
-        "merchant": None,
-        "category": "其他"
+        "success": True,
+        "amount": str(result.amount) if result.amount else None,
+        "date": result.date,
+        "merchant": result.merchant,
+        "category": result.category or "其他",
+        "confidence": result.confidence,
+        "type": result.type,
+        "note": result.note,
+        "raw_text": result.raw_text[:500] if result.raw_text else "",
+        "provider": result.provider
     }
 
 
@@ -131,4 +207,70 @@ def parse_receipt_text(
         "category": category,
         "confidence": confidence / 100,
         "note": merchant or "Unknown"
+    }
+
+
+@router.get("/providers")
+def get_providers():
+    """
+    Get available OCR providers
+    
+    Returns:
+        List of available providers with their capabilities
+    """
+    # Check if tesseract is available
+    tesseract_available = False
+    try:
+        import pytesseract
+        tesseract_available = True
+    except ImportError:
+        pass
+    
+    return {
+        "providers": [
+            {
+                "id": "auto",
+                "name": "自动选择",
+                "description": "自动选择最佳可用provider",
+                "free": True,
+            },
+            {
+                "id": "tesseract",
+                "name": "Tesseract OCR",
+                "description": "本地免费OCR引擎，需要安装Tesseract",
+                "free": True,
+            },
+            {
+                "id": "regex",
+                "name": "正则解析",
+                "description": "基于正则表达式的简单解析，作为备选方案",
+                "free": True,
+            },
+        ],
+        "tesseract_available": tesseract_available
+    }
+
+
+@router.get("/health")
+def health_check():
+    """
+    Check OCR service health
+    
+    Returns:
+        Service status and available providers
+    """
+    # Check if tesseract is available
+    tesseract_available = False
+    try:
+        import pytesseract
+        tesseract_available = True
+    except ImportError:
+        pass
+    
+    return {
+        "status": "healthy",
+        "providers": {
+            "tesseract": tesseract_available,
+            "regex": True,
+        }
     }

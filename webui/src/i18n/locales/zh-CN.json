@@ -347,5 +347,16 @@
     "confidence": "置信度",
     "apply": "应用到表单",
     "clear": "清除"
+  },
+  "prediction": {
+    "title": "支出预测",
+    "subtitle": "基于最近{months}个月数据",
+    "noData": "数据不足，无法预测",
+    "nextMonth": "下月预测支出",
+    "confidenceRange": "置信区间: {low} ~ {high}",
+    "currentMonthActual": "本月实际支出",
+    "progress": "预测进度",
+    "categoryBreakdown": "分类预测",
+    "basedOn": "基于 {months} 个月数据"
   }
 }

@@ -347,5 +347,16 @@
     "confidence": "Confidence",
     "apply": "Apply to Form",
     "clear": "Clear"
+  },
+  "prediction": {
+    "title": "Spending Prediction",
+    "subtitle": "Based on last {months} months",
+    "noData": "Insufficient data for prediction",
+    "nextMonth": "Next Month Prediction",
+    "confidenceRange": "Range: {low} ~ {high}",
+    "currentMonthActual": "Current Month Actual",
+    "progress": "Prediction Progress",
+    "categoryBreakdown": "Category Breakdown",
+    "basedOn": "Based on {months} months"
   }
 }
