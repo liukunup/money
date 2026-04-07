@@ -19,7 +19,7 @@
       <p class="empty-message">{{ t('prediction.noData') }}</p>
     </div>
 
-    <div v-else class="prediction-content">
+    <div v-else-if="data" class="prediction-content">
       <div class="main-prediction">
         <div class="prediction-label">{{ t('prediction.nextMonth') }}</div>
         <div class="prediction-value">

@@ -46,7 +46,8 @@
     "submit": "Submit",
     "required": "Required",
     "optional": "Optional",
-    "optionalText": "(optional)"
+    "optionalText": "(optional)",
+    "retry": "Retry"
   },
   "auth": {
     "login": "Log In",
@@ -250,7 +251,9 @@
     "apply": "Apply",
     "applyToForm": "Apply to Form",
     "confidence": "Confidence",
-    "manual": "Manual Entry",
+    "manual": "Manual",
+    "textInput": "Text",
+    "screenshot": "Screenshot",
     "aiInput": "AI Smart Input",
     "plainText": "Plain Text",
     "unknown": "Unknown"
@@ -340,13 +343,22 @@
   "ocr": {
     "title": "Screenshot OCR",
     "dropOrClick": "Drop or click to upload screenshot",
+    "dropzoneText": "Upload Receipt Screenshot",
+    "dropzoneSubtext": "Supports JPG, PNG, GIF, BMP, WebP",
+    "selectImage": "Select Image",
+    "processing": "Processing image...",
+    "parseFailed": "Failed to parse image",
+    "processingError": "Error processing image",
+    "invalidFileType": "Unsupported image format",
+    "fileTooLarge": "Image exceeds 10MB limit",
     "amount": "Amount",
     "date": "Date",
     "merchant": "Merchant",
     "category": "Category",
     "confidence": "Confidence",
     "apply": "Apply to Form",
-    "clear": "Clear"
+    "clear": "Clear",
+    "retry": "Retry"
   },
   "prediction": {
     "title": "Spending Prediction",

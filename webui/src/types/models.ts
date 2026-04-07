@@ -56,3 +56,42 @@ export interface CategoryCreate {
   type: 'income' | 'expense';
   icon?: string;
 }
+
+export interface MonthlyHistory {
+  year: number;
+  month: number;
+  total: number;
+}
+
+export interface CategoryPrediction {
+  category_id: number;
+  category_name: string;
+  category_icon?: string;
+  predicted_amount: number;
+  ratio: number;
+  confidence_low: number;
+  confidence_high: number;
+}
+
+export interface PredictionResponse {
+  predicted_total: number;
+  confidence_low: number;
+  confidence_high: number;
+  based_on_months: number;
+  monthly_history: MonthlyHistory[];
+  category_predictions: CategoryPrediction[];
+}
+
+export interface CurrentMonthActual {
+  actual_total: number;
+  month: number;
+  year: number;
+  day_of_month: number;
+  days_in_month: number;
+}
+
+export interface PredictionWithActual {
+  prediction: PredictionResponse;
+  current_month: CurrentMonthActual;
+  projected_vs_actual: number;
+}

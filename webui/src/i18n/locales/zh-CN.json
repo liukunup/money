@@ -46,7 +46,8 @@
     "submit": "提交",
     "required": "必填",
     "optional": "选填",
-    "optionalText": "（选填）"
+    "optionalText": "（选填）",
+    "retry": "重试"
   },
   "auth": {
     "login": "登录",
@@ -250,7 +251,9 @@
     "apply": "应用",
     "applyToForm": "应用到表单",
     "confidence": "置信度",
-    "manual": "手动输入",
+    "manual": "手动",
+    "textInput": "文本",
+    "screenshot": "截图",
     "aiInput": "AI智能输入",
     "plainText": "纯文本",
     "unknown": "未知"
@@ -340,13 +343,22 @@
   "ocr": {
     "title": "截图识别",
     "dropOrClick": "拖拽或点击上传截图",
+    "dropzoneText": "上传收据截图",
+    "dropzoneSubtext": "支持 JPG, PNG, GIF, BMP, WebP 格式",
+    "selectImage": "选择图片",
+    "processing": "正在处理图片...",
+    "parseFailed": "图片解析失败",
+    "processingError": "图片处理出错",
+    "invalidFileType": "不支持的图片格式",
+    "fileTooLarge": "图片大小超过10MB限制",
     "amount": "金额",
     "date": "日期",
     "merchant": "商户",
     "category": "分类",
     "confidence": "置信度",
     "apply": "应用到表单",
-    "clear": "清除"
+    "clear": "清除",
+    "retry": "重试"
   },
   "prediction": {
     "title": "支出预测",

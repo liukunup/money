@@ -216,18 +216,41 @@ function handleClose() {
             <button
               type="button"
               class="mode-btn"
-              :class="{ active: inputMode === 'ai' }"
-              @click="inputMode = 'ai'"
+              :class="{ active: inputMode === 'text' }"
+              @click="inputMode = 'text'"
             >
-              {{ t('textParse.aiInput') }}
+              {{ t('textParse.textInput') }}
+            </button>
+            <button
+              type="button"
+              class="mode-btn"
+              :class="{ active: inputMode === 'screenshot' }"
+              @click="inputMode = 'screenshot'"
+            >
+              {{ t('textParse.screenshot') }}
             </button>
           </div>
         </div>
 
-        <!-- AI Input Mode -->
-        <div v-if="inputMode === 'ai'" class="ai-input-section">
+        <!-- Text Input Mode -->
+        <div v-if="inputMode === 'text'" class="ai-input-section">
           <TextPasteInput
             @parsed="handleParsedData"
+          />
+          <div v-if="parsedData" class="parsed-summary">
+            <span class="parsed-amount">¥{{ parsedData.amount || '0' }}</span>
+            <span class="parsed-type" :class="parsedData.type">{{ parsedData.type === 'income' ? t('transactions.income') : t('transactions.expense') }}</span>
+            <button type="button" class="apply-btn" @click="applyParsedData">
+              {{ t('textParse.applyToForm') }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Screenshot Input Mode -->
+        <div v-if="inputMode === 'screenshot'" class="ai-input-section">
+          <ScreenshotUpload
+            @parsed="handleParsedData"
+            @error="(msg) => console.error('OCR Error:', msg)"
           />
           <div v-if="parsedData" class="parsed-summary">
             <span class="parsed-amount">¥{{ parsedData.amount || '0' }}</span>

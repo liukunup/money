@@ -25,3 +25,19 @@ export interface ApiError {
   detail: string;
   status_code?: number;
 }
+
+// Text Parse Types
+export interface TextParsedTransaction {
+  amount: string | null;
+  date: string | null;
+  category: string | null;
+  merchant: string | null;
+  note: string | null;
+  type: 'income' | 'expense';
+  confidence: number;
+  format_type: string;
+}
+
+export interface TextParseRequest {
+  text: string;
+}
