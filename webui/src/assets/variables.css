@@ -98,9 +98,21 @@
   --breakpoint-2xl: 1536px;
 }
 
-/* Dark Mode Support */
+[data-theme="dark"] {
+  --color-bg-primary: #000000;
+  --color-bg-secondary: #1C1C1E;
+  --color-bg-tertiary: #2C2C2E;
+  --color-bg-elevated: #1C1C1E;
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #98989D;
+  --color-text-tertiary: #636366;
+  --color-text-inverse: #000000;
+  --color-separator: rgba(84, 84, 88, 0.65);
+  --color-separator-opaque: #38383A;
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
     --color-bg-primary: #000000;
     --color-bg-secondary: #1C1C1E;
     --color-bg-tertiary: #2C2C2E;

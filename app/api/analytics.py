@@ -5,7 +5,7 @@ from app.db.database import get_db
 from app.models.transaction import Transaction
 from app.models.category import Category
 from app.models.user import User
-from app.api.users import get_current_user
+from app.core.security import get_current_user
 from datetime import datetime, timedelta
 
 router = APIRouter()
