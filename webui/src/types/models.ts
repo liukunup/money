@@ -25,6 +25,50 @@ export interface Transaction {
   date: string;
   note?: string;
   created_at: string;
+  tag_ids?: number[];
+  anomaly_info?: {
+    anomaly_level?: 'warning' | 'anomaly' | 'alert' | null;
+    category_monthly_average?: string | null;
+    anomaly_reason?: string | null;
+  };
+}
+
+export interface Tag {
+  id: number;
+  name: string;
+  type?: 'general' | 'expense' | 'income';
+  color?: string;
+  icon?: string;
+  description?: string;
+  created_at: string;
+}
+
+export interface TimePeriod {
+  id: number;
+  name: string;
+  type?: 'custom' | 'monthly' | 'quarterly' | 'yearly';
+  start_date: string;
+  end_date: string;
+  color?: string;
+  icon?: string;
+  description?: string;
+  created_at: string;
+}
+
+export interface DeletedItem {
+  id: number;
+  type: 'transaction' | 'category' | 'tag';
+  item_id: number;
+  item_type: string;
+  name: string;
+  deleted_at?: string;
+  deleted_by?: number;
+}
+
+export interface RecycleBinStats {
+  total_transactions: number;
+  total_categories: number;
+  total_tags: number;
 }
 
 export interface TransactionFilters {

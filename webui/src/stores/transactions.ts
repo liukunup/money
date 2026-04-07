@@ -9,6 +9,21 @@ export const useTransactionsStore = defineStore('transactions', () => {
   const loading = ref(false);
   const error = ref<string | null>(null);
   const filters = ref<TransactionFilters>({});
+  
+  const anomalies = ref<Transaction[]>([]);
+  const anomalyStatistics = ref<{
+    warning: number;
+    anomaly: number;
+    alert: number;
+    normal: number;
+    total_amount: number;
+  }>({
+    warning: 0,
+    anomaly: 0,
+    alert: 0,
+    normal: 0,
+    total_amount: 0
+  });
 
   // Actions
   async function fetchTransactions(fetchFilters?: TransactionFilters) {
@@ -87,16 +102,52 @@ export const useTransactionsStore = defineStore('transactions', () => {
     filters.value = {};
   }
 
+  async function fetchAnomalies(fetchFilters?: {
+    start_date?: string;
+    end_date?: string;
+    level?: string;
+  }) {
+    loading.value = true;
+    error.value = null;
+    try {
+      const params = new URLSearchParams();
+      if (fetchFilters?.start_date) params.append('start_date', fetchFilters.start_date);
+      if (fetchFilters?.end_date) params.append('end_date', fetchFilters.end_date);
+      if (fetchFilters?.level) params.append('level', fetchFilters.level);
+      
+      const response = await fetch(`/api/transactions/anomalies?${params}`);
+      const data = await response.json();
+      
+      anomalies.value = data.items || [];
+      anomalyStatistics.value = data.statistics || {
+        warning: 0,
+        anomaly: 0,
+        alert: 0,
+        normal: 0,
+        total_amount: 0
+      };
+    } catch (err: unknown) {
+      const axiosError = err as { response?: { data?: { detail?: string } } };
+      error.value = axiosError.response?.data?.detail || 'Failed to fetch anomalies';
+      throw err;
+    } finally {
+      loading.value = false;
+    }
+  }
+
   return {
     transactions,
     loading,
     error,
     filters,
+    anomalies,
+    anomalyStatistics,
     fetchTransactions,
     createTransaction,
     updateTransaction,
     deleteTransaction,
     setFilters,
     clearFilters,
+    fetchAnomalies,
   };
 });

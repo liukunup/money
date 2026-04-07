@@ -2,6 +2,7 @@
 import { computed } from 'vue';
 import type { Transaction } from '@/types';
 import { useCategoriesStore } from '@/stores/categories';
+import AnomalyMarker from '@/components/anomaly/AnomalyMarker.vue';
 
 interface Props {
   transaction: Transaction;
@@ -83,6 +84,11 @@ function handleDelete() {
       <div class="transaction-item__amount">
         {{ isExpense ? '-' : '+' }}{{ formattedAmount }}
       </div>
+      <AnomalyMarker 
+        v-if="transaction.anomaly_info?.anomaly_level"
+        :level="transaction.anomaly_info.anomaly_level as 'warning' | 'anomaly' | 'alert'"
+        :reason="transaction.anomaly_info.anomaly_reason"
+      />
     </div>
 
     <!-- Actions -->

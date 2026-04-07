@@ -150,6 +150,26 @@
     "netBalance": "Net Balance",
     "totalTransactions": "Total Transactions"
   },
+  "anomaly": {
+    "title": "Anomalies",
+    "subtitle": "Unusual transactions detected",
+    "warning": "Warning",
+    "anomaly": "Anomaly",
+    "alert": "Alert",
+    "all": "All",
+    "noAnomalies": "No anomalies detected",
+    "warningCount": "Warning Count",
+    "anomalyCount": "Anomaly Count",
+    "alertCount": "Alert Count",
+    "viewAll": "View All",
+    "settings": "Anomaly Detection Settings",
+    "warningThreshold": "Warning Threshold",
+    "warningThresholdHint": "Show warning when amount exceeds category monthly average by this multiplier",
+    "anomalyThreshold": "Anomaly Threshold",
+    "anomalyThresholdHint": "Mark as anomaly when amount exceeds category monthly average by this multiplier",
+    "largeTransactionThreshold": "Large Transaction Threshold",
+    "largeTransactionThresholdHint": "Transactions above this amount will always be flagged as alert"
+  },
   "budgets": {
     "title": "Budgets",
     "subtitle": "Manage your spending limits",

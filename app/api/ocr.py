@@ -11,7 +11,7 @@ from typing import Optional
 from app.db.database import get_db
 from app.core.security import get_current_user
 from app.models.user import User
-from app.services.ocr import OCRService, get_ocr_service
+from app.core.security import get_current_user
 
 router = APIRouter()
 
